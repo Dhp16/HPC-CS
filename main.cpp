@@ -1,11 +1,12 @@
 # include <iostream>
 # include <iomanip>
-# include <string>
+# include <array>
 # include <algorithm>
 # include "math.h"
+# include "task1.h"
+# include <string>
 
 
-# include "t1.h"
 
 int main(){
     T1_inputs();

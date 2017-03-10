@@ -1,57 +1,50 @@
-void output_array(double A[6][6]){
+# include "t1.h"
+/*#include <string>
+
     // improve to take any 2D array
-    for(int i = 0; i < 6; i++){
-        for(int j = 0; j < 6; j++){
-            std::cout << std::setw(10);
-            std::cout << A[i][j] << " ";
-        }
-        std::cout << "\n";
+void output_array(double *A, std::string s, int size){
+    std::cout << "Printing: " << s << std::endl;
+    for(int i = 0; i < size*size; i++){
+        if(i != 0 && i % size == 0)
+            std::cout << "\n";
+
+        std::cout << std::setw(10);
+        std::cout << A[i] << " ";
     }
+    std::cout << "\n";
 }
 
-void Ke_generator(double A, double E, double I, double l){  // Populating the element stiffness matrix
-    double Ke[6][6] = {0};
-    Ke[0][0] = A*E/l;
-    Ke[1][1] = 12*E*I/pow(l, 3);
-    Ke[2][2] = 4*E*I/l;
-    Ke[3][3] = A*E/l;
-    Ke[4][4] = Ke[1][1];
-    Ke[5][5] = Ke[2][2];
-    Ke[0][3] = -A*E/l;
-    Ke[1][2] = 6*E*I/pow(l,2);
-    Ke[1][4] = -12*E*I/pow(l, 3);
-    Ke[1][5] = 6*E*I/pow(l,2);
-    Ke[2][4] = -Ke[1][5];
-    Ke[2][5] = 2*E*I/l;
-    Ke[4][5] = -Ke[1][5];
-
-    for(int i = 0; i < 6; i++){                         // Filling reamining fields knowing the matrix is symetric
-        for(int j = 0; j < 6; j++){
-            if(i == j)
-                continue;
-            if(i > j)
-                Ke[i][j] = Ke[j][i];
-        }
-    }
-    output_array(Ke);
-    return;
-}
-
-
-// Qx and Qy magnitudes of the axial and transverse distributed loads
-void Fe_generator(double l, double Qx, double Qy){      // Populating the Element Force Vector
-    double[6] Fe;
+// -------------------------- T1b -------------------------- \\
+void populate_Fe(double *Fe, int i, double l, int Nx, double Qy, double Qx){      // Will be different for each element, Qx --> function of x
     Fe[0] = Qx/2;
     Fe[1] = Qy/2;
     Fe[2] = Qy*l/2;
     Fe[3] = Qx/2;
     Fe[4] = Qy/2;
     Fe[5] = -Qy*l/12;
-    for(int i = 0; i < Fe.size(); i++){
+    for(int i = 0; i < 6; i++){                                     // could create an operator for this
         Fe[i] = Fe[i]*l;
     }
     return; 
 }
+
+// -------------------------- T1c -------------------------- \\
+// Global Force Vector
+void Global_Fe(double l, int Nx, double Qy){
+    double* G_Fe = new double[Nx*6];
+    for(int i = 0; i < Nx;i++){
+        double Fe[6] = {0};
+        populate_Fe(Fe, i, l, Nx, Qy, 1);                 // need to pass through information + Qx
+        G_Fe[i*6]   = Fe[0];
+        G_Fe[i*6+1] = Fe[1];
+        G_Fe[i*6+2] = Fe[2];
+        G_Fe[i*6+3] = Fe[3];
+        G_Fe[i*6+4] = Fe[4];
+        G_Fe[i*6+5] = Fe[5];
+    }
+    return;
+}
+
 
 double Double_Value_Input(std::string name){
     std::string input;
@@ -73,7 +66,7 @@ int Nx_Input(){
     do {
         std::cout << "Please enter desired Nx: ";
         getline (std::cin, input);
-        value = std::stoi(input);
+        value = stoi(input);
         if (value <= 0.0) {
             std::cout << "Nx must be positive!" << std::endl;
         }
@@ -84,7 +77,13 @@ int Nx_Input(){
     return value;
 }
 
+void Analytical_Solution(){
+
+}
 void T1_inputs(){
+
+
+    // ----------------------- T1a -----------------------------------\\
     std::cout << "Initialising Elements" << std::endl;
     double L = Double_Value_Input("L");
     int Nx = Nx_Input();
@@ -93,6 +92,36 @@ void T1_inputs(){
     double E = Double_Value_Input("E");
     double l = L/Nx;    // number of elements
 
-    Ke_generator(A, E, I, l);
+    // ----------------------- Variables needed ----------------------\\
+    double Qx = 10;     
+    double Qy = 10^3;    //  originally in N/mm   
+    double x = 1;
+
+    // ----------------------- T1b -----------------------------------\\
+    std::cout << "HERE!" << std::endl;
+    Global_Fe(l, Nx, Qy);
+
     return;
 }
+*/
+
+void T1_inputs(){
+    std::cout << "Starting Task1" << std::endl;
+    double L = Value_Input("L");
+    int Nx = Nx_Input();
+    double A = Value_Input("A");
+    double I = Value_Input("I");
+    double E = Value_Input("E");
+    double l = L/Nx;    // number of elements
+
+    // ----------------------- Variables needed ----------------------\\
+    double Qx = 10;     
+    double Qy = 10^3;    //  originally in N/mm   
+    double x = 1;
+
+    // ----------------------- T1b -----------------------------------\\
+    //std::cout << "HERE!" << std::endl;
+    //Global_Fe(l, Nx, Qy);
+
+    return;
+};
