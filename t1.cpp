@@ -125,3 +125,7 @@ void T1_inputs(){
 
     return;
 };
+
+std::cout << "Dimensions: " << std::endl;
+    std::cout << "Force: " << 3*Nx << "x" << 1 << std::endl;
+    std::cout << "Stiffness: " << 3*Nx << "x" << 10 << std::endl;

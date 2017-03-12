@@ -2,6 +2,8 @@
 
 // need to write function to write switched matrix
 
+// need to add the force 
+
 #include <fstream>
 
 
@@ -15,6 +17,17 @@ extern "C" {
                     const int& ldab, 
                     int * ipiv, double * B, 
                     const int& ldb, int* info);
+
+    void F77NAME(dgbmv)(const char& trans, 
+                    const int& m, 
+                    const int& n,
+                    const int& kl, 
+                    const int& ku,
+                    const double& alpha, const double* a, 
+                    const int& lda,
+                    const double* x, const int& incx, 
+                    const double& beta,
+                    double* y, const int& incy);
 }
 
 // ------------------------- Tools ----------------------------------
@@ -29,7 +42,6 @@ void output_array(const double *A, const std::string s, const int size){
     }
     std::cout << "\n";
 }
-
 void back_array(double* arr, const int k, const int Nx){
     const int n = 3;
     double* copy = new double[Nx*n];
@@ -42,6 +54,12 @@ void back_array(double* arr, const int k, const int Nx){
     }
     return;
 }
+void initialise_dynamic_array(double* arr, const int Nx, const int n, const int m){
+    for(int i = 0; i < pow(Nx*n, m); i++)
+        arr[i] = 0;
+    return;
+}
+
 //  ------------------------ Task 1 (a) -----------------------------
 double Value_Input(std::string name){
     std::string input;
@@ -110,7 +128,7 @@ void generator_Ke(double* Ke, const double A,const double E,const double I,const
                 Ke[i+j*n] = Ke[j+i*n];
         }
     }
-    output_array(Ke, "Ke", 6);
+    //output_array(Ke, "Ke", 6);
     return;
 }
 // ------------------------- ALL OVER AGAIN ------------------------------
@@ -230,7 +248,7 @@ void Global_Stiffness_Matrix(double* G_Ke, const double* Ke, const int Nx, const
             back_array(se, 3, Nx);
             back_array(fl, 4, Nx);
         }
-        else if(i < k){
+        else if(i < k){                     // adding rows for multipliers
              for(int j = 0; j < Nx*n; j++)
                 G_Ke[i*Nx*n+j] = 0;
         }
@@ -246,7 +264,6 @@ void Global_Stiffness_Matrix(double* G_Ke, const double* Ke, const int Nx, const
     }*/
 }
 // ----------------------- Task 1 (d) ------------------------------------
-
 void write_to_file(double* Sol, const int n){
     std::ofstream myfile;
     std::string file_name = "T1_sol.txt";
@@ -258,11 +275,11 @@ void write_to_file(double* Sol, const int n){
     std::cout << "Solution written to file: " << file_name << std::endl;
     return;
 }
-
 void Solve_Eq2(double* G_Fe, double* N, const int Nx){                                       // [K]{u} = {F}
     // DGBMV
     // http://www.netlib.org/lapack/explore-html/d7/d15/group__double__blas__level2_ga0dc187c15a47772440defe879d034888.html#ga0dc187c15a47772440defe879d034888
-    
+    // DGBSV
+    // http://www.netlib.org/lapack/explore-html/d3/d49/group__double_g_bsolve_gafa35ce1d7865b80563bbed6317050ad7.html#gafa35ce1d7865b80563bbed6317050ad7
     int* ipiv = new int[Nx*3];
 
     int n = Nx*3;
@@ -290,13 +307,12 @@ void Solve_Eq2(double* G_Fe, double* N, const int Nx){                          
     delete[] ipiv;
     return;
 }   
-
-void Matrix_Transformer(double* N, double* M, const int Nx){
+void Matrix_Transformer(double* N, double* M, const int Nx, const int k){
     const int n = 3;
 
     for(int i = 0; i < Nx*n; i++){
-        for(int j = 0; j < 13; j++){
-            N[i*13+j] = M[j*Nx*n+i]; 
+        for(int j = 0; j < 9+k; j++){
+            N[i*(9+k)+j] = M[j*Nx*n+i]; 
         }
     }
 
@@ -312,7 +328,6 @@ void Matrix_Transformer(double* N, double* M, const int Nx){
 }
 // ----------------------- Task 1 (e) ------------------------------------
 void Analytical_Sol(const int Nx, const double L, const double Qy, const double E, const double I){
-    std::cout << "Analytical Solution" << std::endl;
     std::vector<double> x_locs;
     std::vector<double> asol;
     for(double i = 0; i < Nx; i++){
@@ -332,30 +347,18 @@ void Analytical_Sol(const int Nx, const double L, const double Qy, const double 
 }
 
 // -----------------------------------------------------------------------
-void T1_inputs(){
+void T1_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy){
     //int Nx = Nx_Input();
     //double A = Value_Input("A");
     //double I = Value_Input("I");
     //double E = Value_Input("E");
     //double L = Value_Input("L");
     // ----------------------- Task 1 (a) ----------------------------
-    int Nx = 25;
-    double b = 0.1;
-    double h = 0.12;
-    double L = 10.0;
-    double A = 0.1*0.12;
-    double I = b*pow(h, 3)/12;
-    double E = 210000000000;
-    double l = L/Nx;    // number of elements
-
-    // ----------------------- Variables needed ----------------------
-    const double Qx = 0;       // no axial force     
-    const double Qy = 10^3;    //  originally in N/mm   
     const int n = 3;
     const int k = 4;
     // ----------------------- T1b -----------------------------------
     double Ke[36] = {0};
-    double Fe[36] = {0};
+    double Fe[6] = {0};
     pp_Fe(Fe, l, Nx, Qy, Qx);
     generator_Ke(Ke, A, E, I, l);
     // ----------------------- Task 1 (c) ----------------------------
@@ -376,7 +379,7 @@ void T1_inputs(){
     Global_Force_Vector(G_Fe, Fe, Nx, k);
     Global_Stiffness_Matrix(G_Ke, Ke, Nx, k);
 
-    Matrix_Transformer(N, G_Ke, Nx);
+    Matrix_Transformer(N, G_Ke, Nx, k);
     Solve_Eq2(G_Fe, N, Nx);
     Analytical_Sol( Nx, L, Qy, E, I);
 
