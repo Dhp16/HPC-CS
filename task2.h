@@ -26,8 +26,6 @@ void adding_three_arrays(double* result, double* A, double* B, double* C, const 
 	return;
 }
 
-
-
 // ---------------------------------- Task 1 (b) ------------------
 void input_validation(){}	// validate the inputs
 
@@ -86,7 +84,7 @@ void Inverse_Diagonal_Matrix(double* M, const int Nx){
 	return;
 }
 
-void T2_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, 
+void T2_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
 	const double T, const double Nt, const double rho){ 
 
 	std::cout << "\nStarting Task 2" << std::endl;
@@ -98,7 +96,7 @@ void T2_inputs(const int Nx, const double b, const double h, const double L, con
 	pp_Fe(Fe, l, Nx, Qy, Qx);
 	int k = 0;
 	double Ke[36] = {0};
-	generator_Ke(Ke, A, E, I, l);
+	pp_Ke(Ke, A, E, I, l);
 
 	// COEF1: 1/delta_t^2
 	double* AA = new double[Nx*n];
@@ -125,6 +123,15 @@ void T2_inputs(const int Nx, const double b, const double h, const double L, con
 	double* COEF2 = new double[Nx*n*9];
 	Matrix_Transformer(COEF2, BB, Nx, k);				// switch to column major
 	delete[] BB;
+
+	std::cout << "COEF2" << std::endl;
+	for(int i = 0; i < Nx*n*9; i++){
+		if(i % 9 == 0)
+			std::cout << std::endl;
+		std::cout << COEF2[i] << "     ";
+	}
+
+
 														// at this stage COEF2 = [K] - 2[M]/delta_t^2  -    banded - column Major
 	// COEF3: -1/delat_t^2[M]
 	double* CC = new double[Nx*n];
@@ -181,7 +188,7 @@ void T2_inputs(const int Nx, const double b, const double h, const double L, con
 		initialise_dynamic_array(Y2, Nx, n, 1);
 		initialise_dynamic_array(Y3, Nx, n, 1);
 
-		Global_Force_Vector(Fi, Fe, Nx, k);
+		Global_Force_Vector(Fi, Fe, Nx, k, Fy);
 		Matrix_by_Scalar(Fi, (double)t_now/T , Nx);
 
 		int h = Nx*n;
@@ -228,8 +235,8 @@ void T2_inputs(const int Nx, const double b, const double h, const double L, con
 		delete[] Y1;
 		delete[] Y2;
 		delete[] Y3;
-		
 	}
+	// for(int i = 0; i < Nx*3; i++)
 
 	delete[] COEF1;
 	delete[] COEF2;
