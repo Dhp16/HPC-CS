@@ -59,6 +59,4 @@ fig1.patch.set_facecolor('white')
 ax1.hold(False)
 plt.show()
 
-
-
-
+# comma delimited
