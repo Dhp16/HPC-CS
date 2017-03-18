@@ -48,7 +48,7 @@ void pp_Fe(double Fe[6], double l, int Nx, double Qy, double Qx){
         Fe[i] = Fe[i]*l;
     
     return; 
-}
+} 
 void pp_Ke(double* Ke, const double A,const double E,const double I,const double l){  // Populating the element stiffness matrix
     //double Ke[36] = {0};
     int n = 6;
@@ -281,25 +281,6 @@ void Solve_Eq2(double* G_Fe, double* N, const int Nx, const double L){          
     delete[] ipiv;
     return;
 }   
-void Matrix_Transformer(double* N, const double* M, const int Nx, const int k = 0){
-    const int n = 3;
-
-    for(int i = 0; i < Nx*n; i++){
-        for(int j = 0; j < 9+k; j++){
-            N[i*(9+k)+j] = M[j*Nx*n+i]; 
-        }
-    }
-
-    /*std::cout << "Global stiffness Switched" << std::endl;
-    for(int i = 0; i < Nx*n*13; i++){
-        if(i % 13 == 0)
-            std::cout << std::endl;
-        std::cout << std::setw(5);
-        std::cout << N[i] << " " ;
-    }*/
-
-    return;
-}
 void Solve_Eq2_Symetric (double* G_Ke, double* G_Fe, const int Nx, const double L){                                       // [K]{u} = {F}
     // DGBMV
     // http://www.netlib.org/lapack/explore-html/d7/d15/group__double__blas__level2_ga0dc187c15a47772440defe879d034888.html#ga0dc187c15a47772440defe879d034888
@@ -308,12 +289,12 @@ void Solve_Eq2_Symetric (double* G_Ke, double* G_Fe, const int Nx, const double 
     int n = 3;
     int J = Nx*n;
     int ku = 4;
-    int info = 16;
+    int info;
 
     F77NAME(dpbsv)('U', J, ku, 1, G_Ke, 5, G_Fe, J, info); 
 
     if(info == 0){
-        std::cout << "Computation of the solution successful" << std::endl;
+        std::cout << "Computation of the solution successful" << std::endl;             // something wrong with one of the vector sizes
         write_to_file(G_Fe, J, L, Nx);
     }
     else
@@ -361,7 +342,6 @@ void Analytical_Sol(const int Nx, const double L, const double Qy, const double 
     //std::cout << "Analytical Solution written to: " << file_name << std::endl;
     return;
 }
-
 // -----------------------------------------------------------------------
 void T1_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy){
     //int Nx = Nx_Input();
@@ -379,7 +359,6 @@ void T1_inputs(const int Nx, const double b, const double h, const double L, con
     pp_Ke(Ke, A, E, I, l);
     // ----------------------- Task 1 (c) ----------------------------
     double* G_Fe = new double[n*Nx+k];
-
     Global_Force_Vector(G_Fe, Fe, Nx, k, Fy);
 
     bool symetric = false;
