@@ -197,6 +197,9 @@ void Global_Stiffness_Matrix(double* G_Ke, const double* Ke, const int Nx, const
                 G_Ke[i*Nx*n+j] = 0;
         }
     }
+
+
+
     return;
 }
 
@@ -361,7 +364,7 @@ void T1_inputs(const int Nx, const double b, const double h, const double L, con
     double* G_Fe = new double[n*Nx+k];
     Global_Force_Vector(G_Fe, Fe, Nx, k, Fy);
 
-    bool symetric = false;
+    bool symetric = true;
     if(!symetric){
         double* G_Ke = new double[Nx*n*(10+k)];
         double* N = new double[Nx*n*(10+k)];

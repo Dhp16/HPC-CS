@@ -19,6 +19,7 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
 	double gamma = 0.5;
 
 	int n = 3;
+	int vec_size = Nx*n;
 	double delta_t = T/Nt;											// time step
 
 	double Fe[6] = {0};											// elemental force vector
@@ -27,14 +28,14 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
 	double Ke[36] = {0};				
 	pp_Ke(Ke, A, E, I, l);										// populate elemental stiffness matrix
 
-	double* G_Mm = new double[Nx*n];
+	double* G_Mm = new double[vec_size];
 	Global_Mass_Matrix(G_Mm, Nx, rho, A, l);
-	double* G_Ke = new double[Nx*n*9];
+	double* G_Ke = new double[vec_size*9];
 	Global_Stiffness_Matrix(G_Ke, Ke, Nx, k);
 
 	double* K_effective = new double[Nx*n*13];
 	Global_Stiffness_Matrix(K_effective, Ke, Nx, 4);
-	K_Effective(K_effective, G_Mm, Nx, delta_t);
+	K_Effective(K_effective, G_Mm, Nx, delta_t);		// inside the loop beacuse DGBSV mangles with it
 
 	double* DIS = new double[Nx*n];
 	double* VEL = new double[Nx*n];
@@ -49,50 +50,41 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
 	initialise_dynamic_array(VEL_plus, Nx, n, 1);
 	initialise_dynamic_array(ACC_plus, Nx, n, 1);
 
-	double* Fi = new double[Nx*n];
-	initialise_dynamic_array(Fi, Nx, n, 1);
-	Global_Force_Vector(Fi, Fe, Nx, k, Fy, 1);
-
 	for(int i = 0; i < Nt; i++){
 		double t_now = i*delta_t;
 
-		// Equation 12
-		double* DIS12 = new double[Nx*n]; Matrix_Copy(DIS12, DIS, Nx*n);
-		double* VEL12 = new double[Nx*n]; Matrix_Copy(VEL12, VEL, Nx*n);
-		double* ACC12 = new double[Nx*n]; Matrix_Copy(ACC12, ACC, Nx*n);
-		
-		vector_by_scalar(DIS12, 1/(beta*pow(delta_t, 2)), Nx*n);					// willl need to use some of these again without the scalling
-		vector_by_scalar(VEL12, 1/(beta*delta_t), Nx*n);
-		vector_by_scalar(ACC12, 1/(2*beta)-1, Nx*n);
+		double* Fi = new double[Nx*n];
+		initialise_dynamic_array(Fi, Nx, n, t_now/T);
+		Global_Force_Vector(Fi, Fe, Nx, k, Fy, 1);
 
-		double* A = new double[Nx*n];
-		adding_three_arrays(A, DIS12, VEL12, ACC12, Nx);
-		double* B = new double[Nx*n];
-		Diagonal_by_Vector(B, G_Mm, A, Nx);
+		// Equation 12
+		double* DIS12 = new double[vec_size]; Matrix_Copy(DIS12, DIS, vec_size);
+		double* VEL12 = new double[vec_size]; Matrix_Copy(VEL12, VEL, vec_size);
+		double* ACC12 = new double[vec_size]; Matrix_Copy(ACC12, ACC, vec_size);
+		
+		vector_by_scalar(DIS12, 1/(beta*pow(delta_t, 2)), vec_size);					// willl need to use some of these again without the scalling
+		vector_by_scalar(VEL12, 1/(beta*delta_t), vec_size);
+		vector_by_scalar(ACC12, 1/(2*beta)-1, vec_size);
+
+		double* A = new double[vec_size];
+		adding_three_arrays(A, DIS12, VEL12, ACC12, vec_size);
+		double* B = new double[vec_size];
+		Diagonal_by_Vector(B, G_Mm, A, vec_size);
 		delete[] A;
-		adding_to_array(B, Fi, Nx);															// B = {F}n+1  + [M]{......}
+		adding_to_array(B, Fi, vec_size);															// B = {F}n+1  + [M]{......}
 		int* ipiv = new int[Nx*3];
     	int info = 1;
 
-    	double* K_effective_copy = new double[Nx*n*13];
-    	Matrix_Copy(K_effective_copy, K_effective, Nx*n*13);								// protecting K_effective from the changes incureed by dgbsv
+    	double* K_effective_copy = new double[vec_size*13];
+    	Matrix_Copy(K_effective_copy, K_effective, vec_size*13);								// protecting K_effective from the changes incureed by dgbsv
     	Matrix_Transformer_Imp(K_effective_copy, Nx, 4);
 
-    	if(i == 0){
-    		for(int i = 0; i < Nx*n*13; i++){
-    			if(i % 13 == 0)
-    				std::cout << "\n";
-    			std::cout << K_effective_copy[i] << "  ";
-    		}
 
-
-    	}
-
-    	F77NAME(dgbsv) (Nx*n, 4, 4, 1, K_effective, 1+2*4+4, ipiv, B, Nx*n, &info);	// result should be ported to DIS_plus10--> save KEff for next loop
+    	F77NAME(dgbsv) (vec_size, 4, 4, 1, K_effective, 1+2*4+4, ipiv, B, vec_size, &info);	// result should be ported to DIS_plus10--> save KEff for next loop
     	if(i == 0 && info != 0)
     		std::cout << "dgbsv failed!" << std::endl;
     	delete[] K_effective_copy;
-    	Matrix_Copy(DIS_plus, B, Nx*n);
+    	Matrix_Copy(DIS_plus, B, vec_size);
     	delete[] B;
 
     	delete[] DIS12;
@@ -100,17 +92,17 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
     	delete[] ACC12;
 
 		// Equation 10:
-    	double* DIS10 = new double[Nx*n]; 		Matrix_Copy(DIS10, DIS, Nx*n);
-    	double* DIS_plus10 = new double[Nx*n];  Matrix_Copy(DIS_plus10, DIS_plus, Nx*n);
-		double* VEL10 = new double[Nx*n]; 		Matrix_Copy(VEL10, VEL, Nx*n);
-		double* ACC10 = new double[Nx*n]; 		Matrix_Copy(ACC10, ACC, Nx*n);
+    	double* DIS10 = new double[Nx*n]; 		Matrix_Copy(DIS10, DIS, vec_size);
+    	double* DIS_plus10 = new double[Nx*n];  Matrix_Copy(DIS_plus10, DIS_plus, vec_size);
+		double* VEL10 = new double[Nx*n]; 		Matrix_Copy(VEL10, VEL, vec_size);
+		double* ACC10 = new double[Nx*n]; 		Matrix_Copy(ACC10, ACC, vec_size);
 
-    	sub_from_vector(DIS_plus10, DIS, Nx);											// DIS_plus = DIS_plus - DIS_plus--> {u}n+1 = ({u}n+1 - {u}n)
-    	vector_by_scalar(DIS_plus10, 1/(beta*pow(delta_t, 2)), Nx*n);				// DIS_plus = DIS_plus*1/(beta*delta_t^2)		
+    	sub_from_vector(DIS_plus10, DIS, vec_size);											// DIS_plus = DIS_plus - DIS_plus--> {u}n+1 = ({u}n+1 - {u}n)
+    	vector_by_scalar(DIS_plus10, 1/(beta*pow(delta_t, 2)), vec_size);				// DIS_plus = DIS_plus*1/(beta*delta_t^2)		
 
-    	vector_by_scalar(VEL10, -1/(beta*delta_t), Nx*n);
-    	vector_by_scalar(ACC10, 1-1/(2*beta), Nx*n);
-    	adding_three_arrays(ACC_plus, DIS_plus10, VEL10, ACC10, Nx);	// ACC_plus = 1/(beta*delta_t^2)*({u}n+1 - {u}n) - 1/(beta*delta_t)*{udot}n - (1/2*beta -1){u dotdot}n
+    	vector_by_scalar(VEL10, -1/(beta*delta_t), vec_size);
+    	vector_by_scalar(ACC10, 1-1/(2*beta), vec_size);
+    	adding_three_arrays(ACC_plus, DIS_plus10, VEL10, ACC10, vec_size);	// ACC_plus = 1/(beta*delta_t^2)*({u}n+1 - {u}n) - 1/(beta*delta_t)*{udot}n - (1/2*beta -1){u dotdot}n
 		
     	delete[] VEL10;
     	delete[] ACC10;
@@ -118,12 +110,12 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
     	delete[] DIS_plus10;
 
     	// Equation 11
-    	double* ACC11 = new double[Nx*n];  		Matrix_Copy(ACC11, ACC, Nx*n);
-    	double* ACC_plus11 = new double[Nx*n];  Matrix_Copy(ACC_plus11, ACC_plus, Nx*n);
+    	double* ACC11 = new double[Nx*n];  		Matrix_Copy(ACC11, ACC, vec_size);
+    	double* ACC_plus11 = new double[Nx*n];  Matrix_Copy(ACC_plus11, ACC_plus, vec_size);
 
-    	vector_by_scalar(ACC11, delta_t*(1-gamma), Nx*n);
-    	vector_by_scalar(ACC_plus11, delta_t*gamma, Nx*n);
-    	adding_three_arrays(ACC_plus, VEL, ACC11, ACC_plus11, Nx);
+    	vector_by_scalar(ACC11, delta_t*(1-gamma), vec_size);
+    	vector_by_scalar(ACC_plus11, delta_t*gamma, vec_size);
+    	adding_three_arrays(ACC_plus, VEL, ACC11, ACC_plus11, vec_size);
 
     	delete[] ACC11;
     	delete[] ACC_plus11;
@@ -137,9 +129,9 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
 
     	// ---------------------- Assigning for next loop --------------
 
-    	Matrix_Copy(DIS, DIS_plus, Nx*n);
-    	Matrix_Copy(VEL, VEL_plus, Nx*n);
-    	Matrix_Copy(ACC, ACC_plus, Nx*n);
+    	Matrix_Copy(DIS, DIS_plus, vec_size);
+    	Matrix_Copy(VEL, VEL_plus, vec_size);
+    	Matrix_Copy(ACC, ACC_plus, vec_size);
 	}
 
 
