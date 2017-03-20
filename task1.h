@@ -1,8 +1,11 @@
-// bsv.cpp
+/* 
+ Imperial College London
+ HPC Assignment Task 1
+ Dominic Pickford 
+ 01272723
 
-// need to write function to write switched matrix
-
-// need to add the force 
+ This is the header file declaring all the functions that are key to task 1
+ */
 
 #include <fstream>
 
@@ -152,7 +155,7 @@ void Global_Stiffness_Matrix(double* G_Ke, const double* Ke, const int Nx, const
     double* fl = new double[Nx*n];
     double* se = new double[Nx*n];
     double* th = new double[Nx*n];
-    double* fo = new double[Nx*n];
+    double* fo = new double[Nx*n]; 
     double* mid = new double[Nx*n];
 
     bfl(fl, Ke, Nx);
@@ -197,9 +200,7 @@ void Global_Stiffness_Matrix(double* G_Ke, const double* Ke, const int Nx, const
                 G_Ke[i*Nx*n+j] = 0;
         }
     }
-
-
-
+                                                
     return;
 }
 
@@ -268,7 +269,7 @@ void Solve_Eq2(double* G_Fe, double* N, const int Nx, const double L){          
     int kl = 4;
     int ku = 4;
     int lda = 1+2*kl+ku;
-    int ldb = J;
+    int ldb = Nx*n;
     int nrhs = 1;
     int info = 16;
 
@@ -315,7 +316,6 @@ void Analytical_Sol(const int Nx, const double L, const double Qy, const double 
     for(int i = 0; i < 100; i++){
         x_locs.push_back((double)i*delta_x);
     }
-
     for(int i = 0; i < x_locs.size()/2+1; i++){
         double x = x_locs[i];
         double u_distributed = Qy*pow(x, 2)*pow(L-x, 2)/(24*E*I);
