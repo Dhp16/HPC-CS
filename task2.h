@@ -212,6 +212,8 @@ void T2_inputsV2(const int Nx, const double b, const double h, const double L, c
 	}
 
 	int DMsize = (dispMid.size()/factor)+1;
+
+
 	double max = -100;
 	double min = 100;
 	for(int i = DMsize; i < dispMid.size(); i++){
@@ -231,7 +233,6 @@ void T2_inputsV2(const int Nx, const double b, const double h, const double L, c
 		file_name = "FT";
 	else 
 		file_name = "HT";
-
 
 	write_task2(file_name, tsteps, dispMid);
 

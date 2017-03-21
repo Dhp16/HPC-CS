@@ -1,0 +1,18 @@
+##### notes
+
+Task 1:
+Makefile
+
+Task 2:
+analytical solution concentrated loads beying x < L/2
+delete[] BB;
+
+
+
+should probably plot against x as opposed to Nx
+
+using make + makefile
+https://www.youtube.com/watch?v=aw9wHbFTnAQ
+
+
+\\ task 1 banded symetric something wrong with one of the matrix sizes

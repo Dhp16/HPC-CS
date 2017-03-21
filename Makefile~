@@ -1,0 +1,4 @@
+CC = g++
+
+t1: main.o
+	$(C) -o t1 main.o 

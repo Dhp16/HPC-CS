@@ -41,7 +41,7 @@ $(task4): $(task4).cpp
 clean: 
 	rm -f *.o 
 
-#.PHONY: clean run
+#.PHONY: clean run 
 
 # example
 #run: $(TARGET)
@@ -50,3 +50,4 @@ clean:
 #clean:
 #	rm -f *.o 
 #	$(C) -o t1 main.o -std=c++11 -llapack -lblas
+ 
