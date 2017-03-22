@@ -45,16 +45,16 @@ void pp_Fe(double Fe[6], double l, int Nx, double Qy, double Qx){
     Fe[1] = Qy/2;
     Fe[2] = Qy*l/12;
     Fe[3] = Qx/2;
-    Fe[4] = Qy/2;
+    Fe[4] = Qy/2; 
     Fe[5] = -Qy*l/12;
     for(int i = 0; i < 6; i++)                                     // could create an operator for this
         Fe[i] = Fe[i]*l;
-    
+      
     return; 
 } 
 void pp_Ke(double* Ke, const double A,const double E,const double I,const double l){  // Populating the element stiffness matrix
     //double Ke[36] = {0};
-    int n = 6;
+    int n = 6; 
     Ke[0] = A*E/l;
     Ke[1+n] = 12*E*I/pow(l, 3);
     Ke[2+2*n] = 4*E*I/l;
@@ -366,7 +366,7 @@ void T1_inputs(const int Nx, const double b, const double h, const double L, con
 
     bool symetric = true;
     if(!symetric){
-        double* G_Ke = new double[Nx*n*(10+k)];
+        double* G_Ke = new double[Nx*n*(10+k)]; // why 10
         double* N = new double[Nx*n*(10+k)];
         Global_Stiffness_Matrix(G_Ke, Ke, Nx, k);
         Matrix_Transformer(N, G_Ke, Nx, k);

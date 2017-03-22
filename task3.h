@@ -48,8 +48,8 @@ void T3_inputs(const int Nx, const double b, const double h, const double L, con
 	const double gamma = 0.5;
 
 	int n = 3;
-	int vec_size = Nx*n;
-	double delta_t = T/Nt;											// time step
+	int vec_size = Nx*n; 
+	double delta_t = T/Nt;											// time step 
 
 	double Fe[6] = {0};											// elemental force vector
 	pp_Fe(Fe, l, Nx, Qy, Qx);									// populate elemental force vector

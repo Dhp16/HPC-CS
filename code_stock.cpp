@@ -900,4 +900,18 @@ sub_from_vector(DIS_plus10, DIS10, vec_size);                                   
       for(int i = 1; i < PARA_size; i+=3)
          std::cout << U_now[i] << "    ";
     }
-      
+
+    /*std::cout << "\nPARA_Ke final CM" << std::endl;
+    for(int i = 0; i < PARA_nodes*n*(9+k); i++){
+        if(i % (9+k) == 0)
+            std::cout << std::endl;
+        std::cout << std::setw(12) << PARA_Ke[i];  
+    }            // Number of rows of 0s    */
+
+
+        /*std::cout << "\nPARA_Ke with Banded 0s " << std::endl;
+    for(int i = 0; i < (PARA_nodes+4)*n*(9+k); i++){
+        if(i % ((PARA_nodes+4)*n) == 0)
+            std::cout << std::endl;
+        std::cout << std::setw(12) << PARA_Ke_W0s[i];  
+    }*/

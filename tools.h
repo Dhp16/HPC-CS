@@ -32,7 +32,19 @@ extern "C" {
                     const int& LDA,
                     double* B,
                     const int LDB,
-                    int& INFO);   
+                    int& INFO);
+    void F77NAME(pdgbsv)(const int& n, const int& kl, const int& ku, 
+                    const int& nrhs, const double * A, const int& ja,
+                    const int* desca, int * ipiv, double * B, const int& ib,
+                    const int* descb, double* work, const int& lwork, 
+                    int* info); 
+    void Cblacs_get(int, int, int*);
+    void Cblacs_pinfo(int*, int*);
+    void Cblacs_gridinit(int*, char*, int, int);
+    void Cblacs_gridinfo(int, int*, int*, int*, int*);
+    void Cblacs_exit(int);
+    void Cblacs_gridexit(int);
+
     //void F77NAME(dpbsv)(const char& uplo,const int& n,const int& ku,const int& nrhs,double *A,const int& ldab,double* B,const int& ldb, int& info);
 }  
 

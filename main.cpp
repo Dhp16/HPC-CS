@@ -1,11 +1,11 @@
 # include <iostream>        
 # include <iomanip>                  
-# include <array>             
-# include <algorithm>        
-# include "math.h"            
-# include <string>       
+# include <array>               
+# include <algorithm>         
+# include "math.h"              
+# include <string>          
 # include <boost/program_options.hpp> 
-# include <vector>   
+# include <vector>    
       
 # include <mpi.h>
      
@@ -13,27 +13,33 @@
 # include "task1.h"   
 # include "task2.h"     
 # include "task3.h"    
-# include "task4.h"       
+# include "task4.h"    
+# include "task5.h"   
      
+//http://www.netlib.org/scalapack/explore-html/d0/d92/pdgbsv_8f_source.html
+
+
+
 namespace po = boost::program_options;  
       
 int main(int argc, char* argv[]){   
     bool task1 = false;
-    bool task2 = false;  
-    bool task3 = false;   
-    bool task4 = true;      
-               
+    bool task2 = false;    
+    bool task3 = false;    
+    bool task4 = false;       
+    bool task5 = true;       
+                 
     //--------------------------------------------------
-    if(task4){       
+    if(task4 || task5){       
         int retval;    
         retval = MPI_Init(&argc, &argv); 
         if(retval == MPI_SUCCESS)   
-           std::cout << "MPI_SUCCESS!" << std::endl;       // outputting twice, once for each process!
+           std::cout << "_Hash(16#{0})_cPentagram_@Pentagon{}hacking/*initialised" << std::endl;       // outputting twice, once for each process!
     }    
     //--------------------------------------------------
-       
+        
     double b = 0.10;                  
-    double h = 0.120;       
+    double h = 0.120;        
        
     po::options_description desc("Calculates the dynamics of a Beam :D");
     desc.add_options()       
@@ -44,15 +50,15 @@ int main(int argc, char* argv[]){
         ("E", po::value<double>(), "Young's Modulus")          
                   
         ("T", po::value<double>(), "Total Time")          
-        ("Nt", po::value<int>(), "Number of time steps")     
+        ("Nt", po::value<int>(), "Number of time steps")      
         ("rho", po::value<double>(), "Density")   
            
         ;//("Scheme", po::value<std::string>(), "Scheme");
-          
-    po::variables_map vm;        
-    po::store(po::parse_command_line(argc, argv, desc), vm); 
-    po::notify(vm);     
-              
+               
+    po::variables_map vm;         
+    po::store(po::parse_command_line(argc, argv, desc), vm);    
+    po::notify(vm);      
+                 
     double  default_L = 10.0;   
     int     default_Nx = 6; 
     double  default_A = b*h; 
@@ -65,8 +71,8 @@ int main(int argc, char* argv[]){
     std::string default_scheme = "explicit";   
    
     // read in all as strings and then validate inputs
-    
-    // Inputs for Task 1   
+     
+    // Inputs for Task 1     
     const double L = vm.count("L")                  ?   vm["L"].as<double>()     : default_L;   
     int Nx = vm.count("Nx")                         ?   vm["Nx"].as<int>()       : default_Nx; 
     double A = vm.count("A")                        ?   vm["A"].as<double>()     : default_A; 
@@ -91,23 +97,23 @@ int main(int argc, char* argv[]){
         message = 333; 
     int post_box;  
   
-    if(rank == 0)  
+    if(rank == 0)   
         MPI_Send(&message, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);  
     else if(rank == 1){
         MPI_Recv(&post_box, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::cout << "Process 1 received the following number: " <<  post_box << std::endl;
     }
     */   
- 
-    // Successfully passing messages 
-    /*
-    double Info[12];
-    if(rank == 0)
-        for(int i = 0; i < 12; i++) Info[i] = 7777;
+   
+    // Successfully passing messages  
+    /* 
+    double Info[12];  
+    if(rank == 0) 
+        for(int i = 0; i < 12; i++) Info[i] = 7777; 
     
     else 
-        for(int i = 0; i < 12; i++) Info[i] = 1111;
-    
+        for(int i = 0; i < 12; i++) Info[i] = 1111; 
+     
     double post_box[12]; 
 
     if(rank == 0)
@@ -122,16 +128,16 @@ int main(int argc, char* argv[]){
         std::cout << "Process 0 received the following numbers: " << std::endl;
         for(int i = 0; i < 12; i++)
             std::cout << rank <<"   " <<  post_box[i] << "  "; 
-    } 
-    else if(rank == 1){
+    }  
+    else if(rank == 1){ 
         MPI_Recv(&post_box, 12, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         std::cout << "Process 1 received the following numbers: " << std::endl;
         for(int i = 0; i < 12; i++)
             std::cout << post_box[i] << "  ";
     }
-    */
+    */ 
     // ---------------------------------------------------------------
- 
+   
 	// ----------------------- Task 1 (a) ----------------------------
     // need to validate the inputs 
     double l = L/Nx;    
@@ -151,17 +157,21 @@ int main(int argc, char* argv[]){
 
     std::string scheme = "explicit";
 
-    if(task2)  
+    if(task2)   
         T2_inputsV2(Nx, b, h, L, A, I, E, l, Qx, Qy, Fy, T, Nt, rho); 
      
     if(task3)
         T3_inputs(Nx, b, h, L, A, I, E, l, Qx, Qy, Fy, T, Nt, rho);
  
     if(task4) 
-        T4_inputs(Nx, b, h, L, A, I, E, l, Qx, Qy, Fy, T, Nt, rho);
+        T4_inputs(Nx, b, h, L, A, I, E, l, Qx, Qy, Fy, T, Nt, rho);     
     
-    if(task4) 
+    if(task5)
+        T5_inputs(Nx, b, h, L, A, I, E, l, Qx, Qy, Fy, T, Nt, rho);
+
+    if(task4 || task5) 
         MPI_Finalize();  
+
     
     std::cout << "\n\nEnd of program" << std::endl; 
     return 0;  

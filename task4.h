@@ -1,6 +1,6 @@
 /* 
  Imperial College London
- HPC Assignment Task 3
+ HPC Assignment Task 4
  Dominic Pickford 
  01272723
 
@@ -60,7 +60,6 @@ void write_task4(const int Nx, std::string file_name, double* Solution, const in
   std::cout << "\n\n ---------------- Written Task 4 results to file: " << file_name <<". ---------------------"<< std::endl;
   return;
 }
-
 
 void PARA_Force_Vector(double* PARA_G_Fe, const double l, const int PARA_Nx, const int Nx, const double Fy, const double Qy, const double Qx, const int rank,
 	const double scalar){
@@ -134,7 +133,7 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
  		double* PARA_G_Fe = new double[PARA_size];
  		PARA_Force_Vector(PARA_G_Fe, l, PARA_Nx, Nx, Fy, Qy, Qx, rank, t_now/T);
 
-		double* Y2 = new double[PARA_size];
+		double* Y2 = new double[PARA_size]; 
 		double* Y3 = new double[PARA_size]; 
 		initialise_dynamic_array(Y2, PARA_Nx, n, 1);
 		initialise_dynamic_array(Y3, PARA_Nx, n, 1);
@@ -153,12 +152,6 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
 		// ---------------------  collate data and exchange ---------------------------------------
     //MPI_Barrier(MPI_COMM_WORLD);
    	
-   	if(rank == 0 && (i < 100 || i == 9999)){
-   		std::cout << "\n-------------- Time step: " << i << " Tnow: " << t_now  << "-----------";	
-      std::cout << "\nU_now: " << std::endl;
-      for(int i = 1; i < PARA_size; i+=3)
-        std::cout << U_now[i] << "    ";
-    }
    	
     double Parcel[6] = {0};
     double post_box[6] = {0};
@@ -178,12 +171,6 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
        	Parcel[counter] = U_now[i];
         counter++;
       }
-    }
-
-    if(rank == 0 && (i < 100 || i == 9999)){
-      std::cout << "\nParcel from: " << rank <<  std::endl;
-      for(int i = 0; i < 6; i++)
-        std::cout << Parcel[i] << "    ";
     }
 
   
@@ -214,6 +201,13 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
     }
 
 
+      if(rank == 0 && (i < 100 || i > 9800)){
+      std::cout << "\n-------------- Time step: " << i << " Tnow: " << t_now  << "-----------"; 
+      std::cout << "\nU_now: " << std::endl;
+      for(int i = 1; i < PARA_size; i+=3)
+        std::cout << U_now[i] << "    ";
+      }
+
     // rank0 send receive 
     // rank1 receive send
 
@@ -233,31 +227,25 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
 
 
   MPI_Barrier(MPI_COMM_WORLD);
-  double* Message = new double[PARA_size];
+  double* Message = new double[PARA_size-15];
   if(rank == 1){
     int counter = 0;
-    for(int i = 1; i < PARA_size; i+=3){
+    for(int i = 15; i < PARA_size; i++){
       Message[counter] = U_now[i];
       counter++;
     }
-    MPI_Send(Message, PARA_size/3, MPI_DOUBLE, 0, 77, MPI_COMM_WORLD);    // tag 77 
+    MPI_Send(Message, PARA_size-15, MPI_DOUBLE, 0, 77, MPI_COMM_WORLD);    // tag 77 
   }
 
 
   if(rank == 0){
-    double* Solution = new double[Nx];
-    initialise_dynamic_array(Solution, Nx, 1, 1);
-    int counter = 0;
-    for(int i = 0; i < PARA_size; i+=3){
-      Solution[counter] = U_now[i];
-      counter++;
-    }
-    std::cout << "\nSolution before combination: " << std::endl;
-    for(int i = 0; i < Nx; i++)
-      std::cout << Solution[i] << "      ";
+    double* Solution = new double[PARA_size];
+    initialise_dynamic_array(Solution, PARA_size, 1, 1);
+    for(int i = 0; i < PARA_size; i++)
+      Solution[i] = U_now[i];
+    
 
-    // receiving the message works
-    MPI_Recv(Message, PARA_Nx, MPI_DOUBLE, 1, 77, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(Message, PARA_size-15, MPI_DOUBLE, 1, 77, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     //std::cout << "\nMessage received" << std::endl;
     //for(int i = 0; i < PARA_Nx; i++)
     //   std::cout << Message[i] << "     ";
@@ -299,3 +287,24 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
 // at the very end 
 
 // wait for next processs at the end of each loop to pass the information
+
+/*
+    if(rank == 0 && (i < 100 || i == 9999)){
+      std::cout << "\nParcel from: " << rank <<  std::endl;
+      for(int i = 0; i < 6; i++)
+        std::cout << Parcel[i] << "    ";
+    }
+
+
+      if(rank == 0 && (i < 100 || i == 9999)){
+      std::cout << "\n-------------- Time step: " << i << " Tnow: " << t_now  << "-----------"; 
+      std::cout << "\nU_now: " << std::endl;
+      for(int i = 1; i < PARA_size; i+=3)
+        std::cout << U_now[i] << "    ";
+    }
+
+
+
+
+
+*/
