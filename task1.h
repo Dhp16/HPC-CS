@@ -77,7 +77,6 @@ void pp_Ke(double* Ke, const double A,const double E,const double I,const double
                 Ke[i+j*n] = Ke[j+i*n];
         }
     }
-    //output_array(Ke, "Ke", 6);
     return;
 }
 // ------------------------- Banded Non Symetric ------------------------------
@@ -96,7 +95,7 @@ void Global_Force_Vector(double* G_Fe, const double Fe[6], const int Nx, const i
 void bfl(double* bfl, const double* Ke, const int Nx){                         // banded first line
     int nK = 6;
     int n = 3;
-    int k = 4;
+    int k = 4;                      /// number of 0s
     for(int i = 0; i < Nx*3; i++){
         if(i < k){
             bfl[i] = 0;

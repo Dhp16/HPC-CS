@@ -901,7 +901,7 @@ sub_from_vector(DIS_plus10, DIS10, vec_size);                                   
          std::cout << U_now[i] << "    ";
     }
 
-    /*std::cout << "\nPARA_Ke final CM" << std::endl;
+    std::cout << "\nPARA_Ke final CM" << std::endl;
     for(int i = 0; i < PARA_nodes*n*(9+k); i++){
         if(i % (9+k) == 0)
             std::cout << std::endl;
@@ -909,9 +909,97 @@ sub_from_vector(DIS_plus10, DIS10, vec_size);                                   
     }            // Number of rows of 0s    */
 
 
-        /*std::cout << "\nPARA_Ke with Banded 0s " << std::endl;
+    std::cout << "\nPARA_Ke with Banded 0s " << std::endl;
     for(int i = 0; i < (PARA_nodes+4)*n*(9+k); i++){
         if(i % ((PARA_nodes+4)*n) == 0)
             std::cout << std::endl;
         std::cout << std::setw(12) << PARA_Ke_W0s[i];  
-    }*/
+    }
+
+
+    int counter = 4;
+    int Sol_counter = 0;
+    for(int i = 0; i < vec_size; i+=3){
+      if(i < PARA_size)
+        Solution[Sol_counter] = U_now[i];
+      if(i >= PARA_size){
+        Solution[Sol_counter] = Message[counter];
+        counter++;
+        Sol_counter;
+      }
+    }
+    std::cout << "\n\nSOLUTION COMBINED TOGETHER!" << std::endl;
+    for(int i = 0; i < Nx; i++)
+      std::cout << Solution[i] << "   ";
+    write_task4(Nx, "PARA", Solution, vec_size, l); 
+  
+
+    int rank;  
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank); 
+    int message;   
+    
+    if(rank == 0)  
+        message = 666;
+    else  
+        message = 333; 
+    int post_box;  
+  
+    if(rank == 0)   
+        MPI_Send(&message, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);  
+    else if(rank == 1){
+        MPI_Recv(&post_box, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        std::cout << "Process 1 received the following number: " <<  post_box << std::endl;
+    }
+      
+   
+    // Successfully passing messages  
+     
+    double Info[12];  
+    if(rank == 0) 
+        for(int i = 0; i < 12; i++) Info[i] = 7777; 
+    
+    else 
+        for(int i = 0; i < 12; i++) Info[i] = 1111; 
+     
+    double post_box[12]; 
+
+    if(rank == 0)
+        MPI_Send(&Info, 12, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
+    else if(rank == 1){
+        MPI_Send(&Info, 12, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+    }
+ 
+ 
+    if(rank == 0){  
+        MPI_Recv(&post_box, 12, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        std::cout << "Process 0 received the following numbers: " << std::endl;
+        for(int i = 0; i < 12; i++)
+            std::cout << rank <<"   " <<  post_box[i] << "  "; 
+    }  
+    else if(rank == 1){ 
+        MPI_Recv(&post_box, 12, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        std::cout << "Process 1 received the following numbers: " << std::endl;
+        for(int i = 0; i < 12; i++)
+            std::cout << post_box[i] << "  ";
+    }
+    
+
+
+        if(rank == size-1){
+        std::cout <<"AFTER" << std::endl;
+        for(int i = 0; i < PARA_Nx*n*(9+k); i++){
+            if(i % 17 == 0)
+                std::cout << std::endl;
+            std::cout << std::setw(12) << PARA_Ke[i];
+        }
+    }
+
+ 
+
+    MPI_Barrier(MPI_COMM_WORLD);
+        
+    if(rank == 1){
+        std::cout << "\nFinal displacement rank: " << rank << std::endl;
+        for(int i = 1; i < PARA_size; i+=3)
+            std::cout << std::setw(15) << DIS[i];
+    } 

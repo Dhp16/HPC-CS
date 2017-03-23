@@ -9,7 +9,6 @@ task1=main
 task2=main
 task3=main
 
- 
 default: $(TARGET) 
 all: $(TARGET)
 task4: $(task4)

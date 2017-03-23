@@ -61,8 +61,7 @@ void write_task4(const int Nx, std::string file_name, double* Solution, const in
   return;
 }
 
-void PARA_Force_Vector(double* PARA_G_Fe, const double l, const int PARA_Nx, const int Nx, const double Fy, const double Qy, const double Qx, const int rank,
-	const double scalar){
+void PARA_Force_Vector(double* PARA_G_Fe, const double l, const int PARA_Nx, const int Nx, const double Fy, const double Qy, const double Qx, const int rank, const double scalar){
 	double* G_Fe = new double[Nx*3];
 	double Fe[6] = {0};
   pp_Fe(Fe, l, Nx, Qy, Qx);
@@ -201,12 +200,12 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
     }
 
 
-      if(rank == 0 && (i < 100 || i > 9800)){
+    if(rank == 0 && (i < 100 || i > 9800)){
       std::cout << "\n-------------- Time step: " << i << " Tnow: " << t_now  << "-----------"; 
       std::cout << "\nU_now: " << std::endl;
       for(int i = 1; i < PARA_size; i+=3)
         std::cout << U_now[i] << "    ";
-      }
+    }
 
     // rank0 send receive 
     // rank1 receive send
@@ -222,8 +221,6 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
 
   if(rank == 0)
     std::cout << "\n\n\n\nEND OF LOOP \n\n\n\n";
-
-
 
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -243,37 +240,15 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
     initialise_dynamic_array(Solution, PARA_size, 1, 1);
     for(int i = 0; i < PARA_size; i++)
       Solution[i] = U_now[i];
-    
-
     MPI_Recv(Message, PARA_size-15, MPI_DOUBLE, 1, 77, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    //std::cout << "\nMessage received" << std::endl;
-    //for(int i = 0; i < PARA_Nx; i++)
-    //   std::cout << Message[i] << "     ";
   }
-
-
-
-    /*int counter = 4;
-    int Sol_counter = 0;
-    for(int i = 0; i < vec_size; i+=3){
-      if(i < PARA_size)
-        Solution[Sol_counter] = U_now[i];
-      if(i >= PARA_size){
-        Solution[Sol_counter] = Message[counter];
-        counter++;
-        Sol_counter;
-      }
-    }
-    std::cout << "\n\nSOLUTION COMBINED TOGETHER!" << std::endl;
-    for(int i = 0; i < Nx; i++)
-      std::cout << Solution[i] << "   ";
-    write_task4(Nx, "PARA", Solution, vec_size, l); */
-  
-
  
  	// use process 0 to write results to files
 
-	//delete[] PARA_G_Mm
+  delete[] COEF1;
+  delete[] COEF2;
+  delete[] COEF3;
+
  	delete[] U_minus; 
  	delete[] U_now;
  	delete[] U_plus;
