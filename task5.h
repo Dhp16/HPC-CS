@@ -13,7 +13,7 @@
 
 
 /* Function: Build_PARA_K builds a stiffness matrix of the correct size for each process and be passed to pdgbsv*/
-void Build_PARA_K(double* PARA_K, const int PARA_nodes, const int Nx, const double A, const double E, const double I, const double l){	
+/*void Build_PARA_K(double* PARA_K, const int PARA_nodes, const int Nx, const double A, const double E, const double I, const double l){	
 	double Ke[36] = {0};
 	pp_Ke(Ke, A, E, I, l);
 	const int k = 8; 								// rows of 0s above
@@ -33,7 +33,7 @@ void Build_PARA_K(double* PARA_K, const int PARA_nodes, const int Nx, const doub
 	delete[] PARA_Ke_W0s;
 
 	return;
-}
+}*/
 
 
 void T5_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
@@ -42,9 +42,10 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	const double gamma = 0.5;
 	const double beta = 0.25;
 	const int n = 3;
-	const int k = 8;							// 
+	const int k = 8;							
 	const double delta_t = T/Nt;
 
+	// Populate 
 	double Fe[6] = {0};
 	pp_Fe(Fe, l, Nx, Qy, Qx);
 	double Ke[36] = {0};
@@ -55,26 +56,30 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	MPI_Comm_size(MPI_COMM_WORLD, &size); 						// access the number of processes
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int vec_size = (Nx+1)*3;
-    int PARA_Nx =  (Nx+1)/size;
-    int PARA_size = PARA_Nx*3;
+    int PARA_Nx = (Nx+1)/size;
     int midinc_rank = size/2-1;
     std::cout << "midinc_rank: " << midinc_rank << std::endl;
 
     std::cout <<" rank: " << rank << "  ------------ TASK 5 ------------- " << std::endl;
 
-    const int PS   = vec_size;			// Problem size
-	const int nb   = PS/size;		// Block size
-    const int kl   = 4;   			// Number of lower diagonals
-    const int ku   = 4;   			// Number of upper diagonals
-    const int lda  = 1 + 2*kl + 2*ku; // Leading dimension (num of rows)
+    const int PS   = Nx*3;			// Problem size
+	const int nb   = Nx*3/size;	// Block size
+    const int kl   = 4;   			    // Number of lower diagonals
+    const int ku   = 4;   			    // Number of upper diagonals
+    const int lda  = 1 + 2*kl + 2*ku;   // Leading dimension (num of rows)
     const int ldb  = nb;
     const int nrhs = 1;
     const int ja   = 1;             // Offset index in global array (col)
     const int ib   = 1;             // Offset index in global array (row)
     const int lwork= (nb+ku)*(kl+ku)+6*(kl+ku)*(kl+2*ku) + std::max(nrhs*(nb+2*kl+4*ku), 1);
     int info = 0;
- 
+
+ 	std::cout << "lwork: " << lwork << std::endl;
+    std::cout << "PS: " << PS << std::endl;
+    std::cout << "nb: " << nb << std::endl;
+    std::cout << "lda: " << lda << std::endl;
+    std::cout << "PARA_Nx: " << PARA_Nx << std::endl;
+
     // Set up the CBLACS context
     int nrow = 1;
     int ncol = size;
@@ -107,50 +112,58 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
     descb[4] = 0;           // Process row/column
     descb[5] = nb;          // Local size
     descb[6] = 0;           // Reserved
-
+    
     // -------------------------------------- Equation 13 ----------------------------------------
 	
     // K matrix for each process ------------
 	double* PARA_Ke_0s = new double[(PARA_Nx+4)*n*(9+k)];
 	Global_Stiffness_Matrix(PARA_Ke_0s, Ke, PARA_Nx+4, k);
 	Matrix_Transformer_Imp(PARA_Ke_0s, PARA_Nx+4, k);
-	double* PARA_Ke = new double[PARA_Nx*n*(9+k)];
+	double* PARA_Ke = new double[nb*(9+k)];
 	int counter = 0;
 	int i = 102;
-	while(counter < PARA_Nx*n*(9+k)){
+	while(counter < nb*(9+k)){
 		PARA_Ke[counter] = PARA_Ke_0s[i];
 		counter++;
 		i++;
 	}
 	delete[] PARA_Ke_0s;
+
 	// --------------------------------------
 
-
 	// Adding the Mass factor ---------------
-	double* G_Mm = new double[PARA_size];
+	double* G_Mm = new double[nb];
 	Global_Mass_Matrix(G_Mm, PARA_Nx, rho, A, l);
+	if(size != 1 && rank == size-1){
+		G_Mm[nb-3] = 0;
+		G_Mm[nb-2] = 0;
+		G_Mm[nb-1] = 0;
+	}
+
 	counter = 0;
-	for(int i = 0; i < PARA_Nx*n*(9+k); i++){
+	for(int i = 0; i < nb*(9+k); i++){
 		if((i+5) % 17 == 0){
 			PARA_Ke[i] = PARA_Ke[i] + 1/(beta*pow(delta_t, 2))*G_Mm[counter];
 			counter++;
 		}
 	}
 
+
 	// -------------------------------------	Setting the 1s and 0s to the diagonal on excess Ke -----------
-	if(rank == size-1){
-		for(int i = (PARA_Nx-1)*3*17; i < PARA_Nx*3*17; i++)
+	if(size != 1 && rank == size-1){
+		for(int i = (PARA_Nx-1)*3*17; i < nb*17; i++){
 			if((i+5) % 17 == 0){
 				PARA_Ke[i] = 1.0;
 			}
 			else
-				PARA_Ke[i] = 0;
+				PARA_Ke[i] = 0.0;
+		}
 	}
 
 	// Printing KE
 	if(rank == size-1){
-        std::cout <<"Ke" << rank <<  std::endl;
-        for(int i = 0; i < PARA_Nx*n*(9+k); i++){
+        std::cout <<"Ke: " << rank <<  std::endl;
+        for(int i = 0; i < nb*(9+k); i++){
             if(i % 17 == 0)
                 std::cout << std::endl;
             std::cout << std::setw(12) << PARA_Ke[i];
@@ -159,92 +172,97 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 
 
     // -------------------------------------- Setting up the LOOP --------------------------------
-	double* DIS = new double[PARA_size];
-	double* VEL = new double[PARA_size];
-	double* ACC = new double[PARA_size];
-	initialise_dynamic_array(DIS, PARA_Nx, n, 1);
-	initialise_dynamic_array(VEL, PARA_Nx, n, 1);
-	initialise_dynamic_array(ACC, PARA_Nx, n, 1);
-	double* DIS_plus = new double[PARA_size];
-	double* VEL_plus = new double[PARA_size];
-	double* ACC_plus = new double[PARA_size];
-	initialise_dynamic_array(DIS_plus, PARA_Nx, n, 1);
-	initialise_dynamic_array(VEL_plus, PARA_Nx, n, 1);
-	initialise_dynamic_array(ACC_plus, PARA_Nx, n, 1);
- 
+	double* DIS = new double[nb];
+	double* VEL = new double[nb];
+	double* ACC = new double[nb];
+	initialise_dynamic_array(DIS, nb);
+	initialise_dynamic_array(VEL, nb);
+	initialise_dynamic_array(ACC, nb);
+	double* DIS_plus = new double[nb];
+	double* VEL_plus = new double[nb];
+	double* ACC_plus = new double[nb];
+	initialise_dynamic_array(DIS_plus, nb);
+	initialise_dynamic_array(VEL_plus, nb);
+	initialise_dynamic_array(ACC_plus, nb);
 
 	for(int i = 0; i < Nt; i++){
 		double t_now = i*delta_t;
-
-		// Force
-		double* Fi = new double[PARA_size];
-		initialise_dynamic_array(Fi, PARA_Nx, n, 1);
+ 
+		// --------------------------------------------------------------------- Force
+		double* Fi = new double[nb];
+		initialise_dynamic_array(Fi, nb);
 		if(size > 1){
 			Global_Force_Vector(Fi, Fe, PARA_Nx, 0, 0, (t_now+delta_t)/T);
 			if(rank == midinc_rank)
-				Fi[PARA_size-2] = Fi[PARA_Nx-2] + Fy*(t_now+delta_t)/T;							// add the concentrated load to the central node 
+				Fi[nb-2] += Fy*(t_now+delta_t)/T;							// add the concentrated load to the central node 
+			else if(rank == size -1){
+				Fi[nb-3] = 0;
+				Fi[nb-2] = 0;
+				Fi[nb-1] = 0;
+			}
 		}
-		else{
+		else if(size == 1){
 			Global_Force_Vector(Fi, Fe, PARA_Nx, 0, Fy, (t_now+delta_t)/T);
 		}
 
-
 		// ----------------------- RHS --> Equation 12 ----------------------------------
-		double* A = new double[PARA_size];
-		for(int i = 0; i < PARA_size; i++)
+		double* A = new double[nb];
+		for(int i = 0; i < nb; i++)
 			A[i] = (1/(beta*pow(delta_t, 2))) * DIS[i] + (1/(beta*delta_t)) * VEL[i] + (0.5/beta-1)*ACC[i];
 
-		double* B = new double[PARA_size];
-		for(int i = 0; i < PARA_size; i++)
+		double* B = new double[nb];
+		for(int i = 0; i < nb; i++)
 			B[i] = Fi[i] + A[i]*G_Mm[i];
 
 		if(rank == 1 && i < 5){
 			std::cout << "\n ---------------------- time step: " << i << " info: " << info << "-------------" << std::endl;
-			for(int i = 0; i < PARA_size; i++)
+			for(int i = 0; i < nb; i++)
 				std::cout << std::setw(15) << B[i];
 		}
 
 		// clear after equation
 		delete[] A;
 
-		// Setting up for solver
-		double* PARA_Ke_copy = new double[PARA_Nx*n*(9+k)];
-		Matrix_Copy(PARA_Ke_copy, PARA_Ke, PARA_Nx*n*(9+k));
-		int* ipiv = new int[nb];
+		// Setting up for solvernb
+		double* PARA_Ke_copy = new double[nb*(9+k)];
+		Matrix_Copy(PARA_Ke_copy, PARA_Ke, nb*(9+k));
+		int* ipiv = new int[PS];
 		double* wk   = new double[lwork]; 
+ 
 
 		// ....................... Using Solver .................
-		F77NAME(pdgbsv) (PS, kl, ku, nrhs, PARA_Ke_copy, ja, desca, ipiv, B, ib, descb, wk, lwork, &info);	// nb 
-		
+		//F77NAME(pdgbsv) ((Nx+1)*3, kl, ku, nrhs, PARA_Ke_copy, ja, desca, ipiv, B, ib, descb, wk, lwork, &info);	// nb 
+		F77NAME(pdgbsv) (PS, kl, ku, nrhs, PARA_Ke_copy, ja, desca, ipiv, B, ib, descb, wk, lwork, &info);
+
 		if(rank == 1 && i < 5){
 			std::cout << "\n";
-			for(int i = 0; i < PARA_size; i++)
+			for(int i = 0; i < nb; i++)
 				std::cout << std::setw(15) << B[i];
 		}
 
 		// Assign B to solution
-		Matrix_Copy(DIS_plus, B, PARA_size);
+		Matrix_Copy(DIS_plus, B, nb);
 
 		// Clear after solver
 		delete[] B;
 		delete[] PARA_Ke_copy;
-		delete[] ipiv;
-		delete[] wk;
+		delete[] ipiv;	// 
+		delete[] wk;	//
 
 		// ---------------------- Equation 10 ------------------- 
-    	for(int i = 0; i < PARA_size; i++)
+    	for(int i = 0; i < nb; i++)
     		ACC_plus[i] = ((1/(beta*pow(delta_t, 2)))*(DIS_plus[i] - DIS[i])) - (1/(beta*delta_t))*VEL[i] - ((1/(2*beta)-1)*ACC[i]);   
 
     	// ----------------------- Equation 11 -------------------
-    	for(int i = 0; i < PARA_size; i++)
-    		VEL_plus[i] = VEL[i]      +         (delta_t*(1-gamma))*ACC[i]     +    delta_t*gamma*ACC_plus[i];
+    	for(int i = 0; i < nb; i++)
+    		VEL_plus[i] = VEL[i]      +         delta_t*(1-gamma)*ACC[i]     +    delta_t*gamma*ACC_plus[i];
 
-    	Matrix_Copy(DIS, DIS_plus, PARA_size);
-    	Matrix_Copy(VEL, VEL_plus, PARA_size);
-    	Matrix_Copy(ACC, ACC_plus, PARA_size);
-    	initialise_dynamic_array(DIS_plus, PARA_Nx, n, 1);	// making sure these are returned to 0 before next iteration
-		initialise_dynamic_array(VEL_plus, PARA_Nx, n, 1);
-		initialise_dynamic_array(ACC_plus, PARA_Nx, n, 1);
+    	Matrix_Copy(DIS, DIS_plus, nb);
+    	Matrix_Copy(VEL, VEL_plus, nb);
+    	Matrix_Copy(ACC, ACC_plus, nb);
+    	initialise_dynamic_array(DIS_plus, nb);	// making sure these are returned to 0 before next iteration
+		initialise_dynamic_array(VEL_plus, nb);
+		initialise_dynamic_array(ACC_plus, nb);
 
 		// clear memory
 		delete[] Fi;
@@ -252,13 +270,17 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 		// clear for Output
 	}
 
-
-	if(rank == 1){
+	if(rank == 0){
 		std::cout << "\nFinal displacement rank: " << rank << std::endl;
-		for(int i = 1; i < PARA_size; i+=3)
+		for(int i = 0; i < nb; i++)
 			std::cout << std::setw(15) << DIS[i];
 	}
 
+	if(rank == 1){
+		std::cout << "\nFinal displacement rank: " << rank << std::endl;
+		for(int i = 0; i < nb; i++)
+			std::cout << std::setw(15) << DIS[i];
+	}
 
 	delete[] G_Mm;
 	delete[] DIS;

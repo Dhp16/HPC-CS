@@ -34,7 +34,7 @@ $(task3): $(task3).cpp
  
 $(task4): $(task4).cpp
 	$(PARA_CC) $(task4).cpp -$(CXXFLAGS) $(T5LDLIBS) -o $(task4)
-	mpiexec -np 2 ./$(task4) --L 10.0 --Nx 12 --A 0.012 --I 0.0000144 --E 210000000000 --T 1.0 --Nt 10000 --rho 7850
+	mpiexec -np 1 ./$(task4) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000 --T 1.0 --Nt 10000 --rho 7850
 
 .PHONY: clean
 

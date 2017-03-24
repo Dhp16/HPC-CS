@@ -80,6 +80,11 @@ void initialise_dynamic_array(double* arr, const int Nx, const int n, const int 
         arr[i] = 0.0;
     return;
 }
+void initialise_dynamic_array(double* arr, const int size){
+    for(int i = 0; i < size; i++)
+        arr[i] = 0.0;
+    return;
+}
 void Matrix_Transformer(double* N, const double* M, const int Nx, const int k = 0){
     const int n = 3;
 
