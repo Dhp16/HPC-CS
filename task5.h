@@ -228,13 +228,11 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 		Matrix_Copy(PARA_Ke_copy, PARA_Ke, nb*(9+k));
 		int* ipiv = new int[PS];
 		double* wk   = new double[lwork]; 
- 
 
 		// ....................... Using Solver .................
-		//F77NAME(pdgbsv) ((Nx+1)*3, kl, ku, nrhs, PARA_Ke_copy, ja, desca, ipiv, B, ib, descb, wk, lwork, &info);	// nb 
 		F77NAME(pdgbsv) (PS, kl, ku, nrhs, PARA_Ke_copy, ja, desca, ipiv, B, ib, descb, wk, lwork, &info);
 
-		if(rank == 1 && i < 5){
+		if(rank == 0 && i < 5){
 			std::cout << "\n";
 			for(int i = 0; i < nb; i++)
 				std::cout << std::setw(15) << B[i];

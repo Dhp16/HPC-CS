@@ -1,6 +1,3 @@
-// DGBMV
-// http://www.netlib.org/lapack/explore-html/d7/d15/group__double__blas__level2_ga0dc187c15a47772440defe879d034888.html#ga0dc187c15a47772440defe879d034888
-
 /* 
  Imperial College London
  HPC Assignment Task 3
@@ -8,15 +5,15 @@
  01272723
 
  This is the header file declaring all the functions that are key to task 2
+
+ DGBMV documentation
+ http://www.netlib.org/lapack/explore-html/d7/d15/group__double__blas__level2_ga0dc187c15a47772440defe879d034888.html#ga0dc187c15a47772440defe879d034888
 */
-
-
- 
 
 
 // ---------------------------------- Tools for Task 2 ------------
 
-void Diagonal_to_Full_Size_Banded(double* output, const double* input, const int Nx){
+/*void Diagonal_to_Full_Size_Banded(double* output, const double* input, const int Nx){
 	int n = 3;
 	int counter = 0;
 	for(int i = 0; i < Nx*n*9; i++){
@@ -27,7 +24,7 @@ void Diagonal_to_Full_Size_Banded(double* output, const double* input, const int
 		counter++;
 	}
 	return;
-}
+}*/
 void Diagonal_by_vector_Imp(double* diagonal, const double* vector, const int Nx){
 	const int n = 3;
 	for(unsigned int i = 0; i < Nx*n; i++){
@@ -114,26 +111,26 @@ void write_task2(std::string file_name, std::vector<double> tsteps, std::vector<
 }
 
 
-void T2_inputsV2(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
+void T2_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
 	const double T, const double Nt, const double rho){ 
 
-	std::cout << "\nStarting Task 2" << std::endl;
+	std::cout << "---------------------- Task 2 ------------------------" << std::endl;
 	const int n = 3;
 	int vec_size = Nx*n; 
 	double delta_t = T/Nt;
 	int sizeA = 10;
  
 	double Fe[6] = {0};
-	pp_Fe(Fe, l, Nx, Qy, Qx);
+	pp_Fe(Fe, l, Nx, Qy, Qx);						// populate elemental force vector
 	int k = 0;
-	double Ke[36] = {0};
-	pp_Ke(Ke, A, E, I, l);
+	double Ke[36] = {0};	
+	pp_Ke(Ke, A, E, I, l);							// populate elemental stiffness matrix
 
-	double* G_Mm = new double[vec_size];
-	Global_Mass_Matrix(G_Mm, Nx, rho, A, l);					// --> fine
+	double* G_Mm = new double[vec_size];			// Declare the Global Mass Matrix
+	Global_Mass_Matrix(G_Mm, Nx, rho, A, l);		// Populate the Global Mass Matrix
 
-	double* G_Ke = new double[vec_size*9];
-	Global_Stiffness_Matrix(G_Ke, Ke, Nx, k);	// check this
+	double* G_Ke = new double[vec_size*9];			// Declare the Global Stiffness Matrix
+	Global_Stiffness_Matrix(G_Ke, Ke, Nx, k);		// Populate the Global Stiffness Matrix
 
 	double* COEF1 = new double[vec_size];			// COEF1 = delta_T^2/[M]
 	double* COEF2 = new double[vec_size*9];			// COEF2 = [K] - 2/dealtaT^2 [M]
@@ -246,6 +243,7 @@ void T2_inputsV2(const int Nx, const double b, const double h, const double L, c
 	delete[] COEF2;
 	delete[] COEF3;
 	delete[] G_Mm;
+	std::cout << "------------------- End of Task 2 ----------------------" << std::endl;
 	return;
 }
 

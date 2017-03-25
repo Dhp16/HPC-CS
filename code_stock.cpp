@@ -1003,3 +1003,74 @@ sub_from_vector(DIS_plus10, DIS10, vec_size);                                   
         for(int i = 1; i < PARA_size; i+=3)
             std::cout << std::setw(15) << DIS[i];
     } 
+
+    ############################################################################
+    bool symetric = false;
+    if(!symetric){
+        double* G_Ke = new double[Nx*n*(10+k)];     // declare global stiffness matrix
+        double* N = new double[Nx*n*(10+k)];        
+        Global_Stiffness_Matrix(G_Ke, Ke, Nx, k);
+        Matrix_Transformer(N, G_Ke, Nx, k);
+        Solve_Eq2(G_Fe, N, Nx, L);
+        delete[] G_Ke;
+        delete[] N;
+    }
+    else{
+        double* G_KeS = new double[Nx*n*5];
+        Global_Stiffness_Matrix_Banded_Symetric(G_KeS, Ke, Nx, k);
+        Solve_Eq2_Symetric(G_KeS, G_Fe, Nx, L);
+        delete[] G_KeS;
+    }
+
+
+    void Solve_Eq2_Symetric (double* G_Ke, double* G_Fe, const int Nx, const double L){                                       // [K]{u} = {F}
+    // DGBMV
+    // http://www.netlib.org/lapack/explore-html/d7/d15/group__double__blas__level2_ga0dc187c15a47772440defe879d034888.html#ga0dc187c15a47772440defe879d034888
+    // DGBSV
+    // http://www.netlib.org/lapack/explore-html/d3/d49/group__double_g_bsolve_gafa35ce1d7865b80563bbed6317050ad7.html#gafa35ce1d7865b80563bbed6317050ad7
+    int n = 3;
+    int J = Nx*n;
+    int ku = 4;
+    int info;
+
+    F77NAME(dpbsv)('U', J, ku, 1, G_Ke, 5, G_Fe, J, info); 
+
+    if(info == 0){
+        std::cout << "Computation of the solution successful" << std::endl;             // something wrong with one of the vector sizes
+        write_to_file(G_Fe, J, L, Nx);
+    }
+    else
+        std::cout << "Unable to solve system" << std::endl;
+
+    //delete[] ipiv;
+    return;
+}  
+
+
+// ------------------------ Banded Symetric ------------------------------------
+void Global_Stiffness_Matrix_Banded_Symetric(double* G_Ke, const double* Ke, const int Nx, const int k = 0){
+    int counter = 0;
+    int n = 3;
+    double* l1 = new double[Nx*n];
+    bfl(l1, Ke, Nx);
+    double* l2 = new double[Nx*n];
+    bsl(l2, Ke, Nx);
+    double* l3 = new double[Nx*n];
+    btl(l3, Ke, Nx);
+    double* l4 = new double[Nx*n];
+    bfol(l4, Ke, Nx);
+    double* mid = new double[Nx*n];
+    bmid(mid, Ke, Nx);
+    for(int i = 0; i < Nx*n*5; i+=5){
+        G_Ke[i] = l1[counter];
+        G_Ke[i+1] = l2[counter];
+        G_Ke[i+2] = l3[counter];
+        G_Ke[i+3] = l4[counter];
+        G_Ke[i+4] = mid[counter];
+        counter++;
+    }
+    return;
+}
+
+
+    #############################################################################

@@ -2,6 +2,7 @@
 
 Task 1:
 Makefile
+can read all in as strings
 
 Task 2:
 analytical solution concentrated loads beying x < L/2
@@ -40,3 +41,9 @@ Header files:
 #define functions
 
 #endif
+
+
+
+// Miscellaneous 
+task1:
+	Matrix transformer imp
