@@ -12,24 +12,20 @@ import matplotlib.pyplot as plt
 # The first step is to import all the data and subsequently devide this accross two seperate lists then plot one against the other
 
 ALL_DATA = []											
-with open("T2_osci2.txt") as file:
+with open("Task2_oscillations.txt") as file:
     for line in file:
         line = line.strip()
         ALL_DATA.append(line)
 
 length = len(ALL_DATA)-1
-print "ALL DATA"
-for i in ALL_DATA:
-	print i
-
 
 Loading_Time = []
-for i in range(0, length/2):
+for i in range(length/2, length):
 	Loading_Time.append(ALL_DATA[i])
 
 
 Amplitude = []
-for i in range(length/2, length):
+for i in range(0, length/2):
 	Amplitude.append(ALL_DATA[i])
 
 print "Loading Time"

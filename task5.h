@@ -11,33 +11,12 @@
  Inspiration from example pbsv.cpp provided
 */
 
-
-/* Function: Build_PARA_K builds a stiffness matrix of the correct size for each process and be passed to pdgbsv*/
-/*void Build_PARA_K(double* PARA_K, const int PARA_nodes, const int Nx, const double A, const double E, const double I, const double l){	
-	double Ke[36] = {0};
-	pp_Ke(Ke, A, E, I, l);
-	const int k = 8; 								// rows of 0s above
-	const int n = 3 ;
-	double* PARA_Ke_W0s = new double[(PARA_nodes+4)*n*(9+k)];		// with the banded 0s
-	Global_Stiffness_Matrix(PARA_Ke_W0s, Ke, PARA_nodes+4, k);
-	Matrix_Transformer_Imp(PARA_Ke_W0s, PARA_nodes+4, k);
-
-	int counter = 0;
-	int i = 102;
-	while(counter < PARA_nodes*n*(9+k)){
-		PARA_K[counter] = PARA_Ke_W0s[i];
-		counter++;
-		i++;
-	}
-
-	delete[] PARA_Ke_W0s;
-
-	return;
-}*/
-
-
 void T5_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
 	const double T, const double Nt, const double rho){
+
+	std::cout << "---------------------- Task 5 ------------------------" << std::endl;
+
+	const bool output = false;
 
 	const double gamma = 0.5;
 	const double beta = 0.25;
@@ -58,12 +37,9 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 
     int PARA_Nx = (Nx+1)/size;
     int midinc_rank = size/2-1;
-    std::cout << "midinc_rank: " << midinc_rank << std::endl;
 
-    std::cout <<" rank: " << rank << "  ------------ TASK 5 ------------- " << std::endl;
-
-    const int PS   = Nx*3;			// Problem size
-	const int nb   = Nx*3/size;	// Block size
+    const int PS   = Nx*3;				// Problem size
+	const int nb   = Nx*3/size;			// Block size
     const int kl   = 4;   			    // Number of lower diagonals
     const int ku   = 4;   			    // Number of upper diagonals
     const int lda  = 1 + 2*kl + 2*ku;   // Leading dimension (num of rows)
@@ -73,12 +49,6 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
     const int ib   = 1;             // Offset index in global array (row)
     const int lwork= (nb+ku)*(kl+ku)+6*(kl+ku)*(kl+2*ku) + std::max(nrhs*(nb+2*kl+4*ku), 1);
     int info = 0;
-
- 	std::cout << "lwork: " << lwork << std::endl;
-    std::cout << "PS: " << PS << std::endl;
-    std::cout << "nb: " << nb << std::endl;
-    std::cout << "lda: " << lda << std::endl;
-    std::cout << "PARA_Nx: " << PARA_Nx << std::endl;
 
     // Set up the CBLACS context
     int nrow = 1;
@@ -148,7 +118,6 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 		}
 	}
 
-
 	// -------------------------------------	Setting the 1s and 0s to the diagonal on excess Ke -----------
 	if(size != 1 && rank == size-1){
 		for(int i = (PARA_Nx-1)*3*17; i < nb*17; i++){
@@ -159,17 +128,6 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 				PARA_Ke[i] = 0.0;
 		}
 	}
-
-	// Printing KE
-	if(rank == size-1){
-        std::cout <<"Ke: " << rank <<  std::endl;
-        for(int i = 0; i < nb*(9+k); i++){
-            if(i % 17 == 0)
-                std::cout << std::endl;
-            std::cout << std::setw(12) << PARA_Ke[i];
-        }
-    }
-
 
     // -------------------------------------- Setting up the LOOP --------------------------------
 	double* DIS = new double[nb];
@@ -188,7 +146,7 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	for(int i = 0; i < Nt; i++){
 		double t_now = i*delta_t;
  
-		// --------------------------------------------------------------------- Force
+		// ---- Force --------------------------------------------------------------------- 
 		double* Fi = new double[nb];
 		initialise_dynamic_array(Fi, nb);
 		if(size > 1){
@@ -213,12 +171,6 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 		double* B = new double[nb];
 		for(int i = 0; i < nb; i++)
 			B[i] = Fi[i] + A[i]*G_Mm[i];
-
-		if(rank == 1 && i < 5){
-			std::cout << "\n ---------------------- time step: " << i << " info: " << info << "-------------" << std::endl;
-			for(int i = 0; i < nb; i++)
-				std::cout << std::setw(15) << B[i];
-		}
 
 		// clear after equation
 		delete[] A;
@@ -268,17 +220,27 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 		// clear for Output
 	}
 
-	if(rank == 0){
-		std::cout << "\nFinal displacement rank: " << rank << std::endl;
-		for(int i = 0; i < nb; i++)
-			std::cout << std::setw(15) << DIS[i];
-	}
 
-	if(rank == 1){
-		std::cout << "\nFinal displacement rank: " << rank << std::endl;
-		for(int i = 0; i < nb; i++)
-			std::cout << std::setw(15) << DIS[i];
+	// Need to set up the message passing
+	/*
+	if(size != 1){
+		double* Parcel = new double[nb];
+		for(int i=0; i < nb; i++)
+			Parcel[i] = DIS[i];
+		MPI_Send(Parcel, nb, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
+
+		delete[] Parcel;
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
+	if(rank == 0)
+		std::cout << "End of loop" << std::endl;
+
+	*/
+
+
+
+
+
 
 	delete[] G_Mm;
 	delete[] DIS;
@@ -290,6 +252,10 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	delete[] PARA_Ke;
 
     Cblacs_gridexit( ctx );
+
+    if(rank == 0)
+    	std::cout << "\n------------------- End of Task 5 ----------------------" << std::endl;
+
     return;
 }
 

@@ -1074,3 +1074,230 @@ void Global_Stiffness_Matrix_Banded_Symetric(double* G_Ke, const double* Ke, con
 
 
     #############################################################################
+
+/*void Diagonal_to_Full_Size_Banded(double* output, const double* input, const int Nx){
+    int n = 3;
+    int counter = 0;
+    for(int i = 0; i < Nx*n*9; i++){
+        output[i] = 0;
+    }
+    for(int i = 4*Nx*n; i < 5*Nx*n; i++){
+        output[i] = input[counter];
+        counter++;
+    }
+    return;
+}*/
+
+
+    ###################################################################
+
+            if(i < 5){std::cout << "A" << std::endl; print(A, vec_size);}
+
+        if(i < 5){std::cout << "Force" << std::endl; print(Fi, vec_size);}
+
+                if(i < 5)
+            std::cout << "\n\n\n ---------------------- Time step: " << i << " ---------------------" << std::endl;
+
+
+
+        if(i < 5){
+        std::cout << "Global Mass Matrix" << std::endl; print(G_Mm, vec_size);          
+        std::cout << "B" << std::endl; print(B, vec_size);}
+
+        if(i < 5){std::cout << "ACC_plus" << std::endl; print(ACC_plus, vec_size);}
+        if(i < 5){std::cout << "VEL_plus" << std::endl; print(VEL_plus, vec_size);}
+
+                if(i % 1000 == 0){
+            std::cout << "\n\n\n ---------------------- Time step: " << i << " ---------------------" << std::endl; 
+            std::cout << "Force" << std::endl;
+            for(int i = 0; i < vec_size; i++)
+                std::cout << Fi[i] << "   ";
+            std::cout << "\nDisplacement: " << std::endl;
+            for(int i = 1; i < Nx*n;i+=3)
+                std::cout << DIS_plus[i] << "    ";
+            std::cout << "\nVelocity: " << std::endl;
+            for(int i = 1; i < Nx*n;i+=3)
+                std::cout << VEL_plus[i] << "    ";
+            std::cout << "\nAcceleration: " << std::endl;
+            for(int i = 1; i < Nx*n;i+=3)
+                std::cout << ACC_plus[i] << "    "; 
+        }
+
+    std::cout << "\nSolution" << std::endl;
+    for(int i = 1; i < vec_size; i+=3)
+      std::cout << Solution[i] << "   ";
+
+
+
+
+// at the very end 
+
+// wait for next processs at the end of each loop to pass the information
+
+/*
+    if(rank == 0 && (i < 100 || i == 9999)){
+      std::cout << "\nParcel from: " << rank <<  std::endl;
+      for(int i = 0; i < 6; i++)
+        std::cout << Parcel[i] << "    ";
+    }
+
+
+      if(rank == 0 && (i < 100 || i == 9999)){
+      std::cout << "\n-------------- Time step: " << i << " Tnow: " << t_now  << "-----------"; 
+      std::cout << "\nU_now: " << std::endl;
+      for(int i = 1; i < PARA_size; i+=3)
+        std::cout << U_now[i] << "    ";
+    }
+
+
+
+
+
+*/
+
+
+
+
+
+
+
+
+
+
+######################################## TASK 5 ############################
+
+
+
+
+    if(rank == 1 && output){
+        std::cout << "\nFinal displacement rank: " << rank << std::endl;
+        for(int i = 1; i < nb; i+=3)
+            std::cout << std::setw(15) << DIS[i];
+    }
+
+
+
+        if(rank == 1 && i < 5 && output){
+            std::cout << "\n ---------------------- time step: " << i << " info: " << info << "-------------" << std::endl;
+            for(int i = 0; i < nb; i++)
+                std::cout << std::setw(15) << B[i];
+        }
+
+
+
+
+
+
+
+
+    // Printing KE
+    if(rank == size-1 && output){
+        std::cout <<"Ke: " << rank <<  std::endl;
+        for(int i = 0; i < nb*(9+k); i++){
+            if(i % 17 == 0)
+                std::cout << std::endl;
+            std::cout << std::setw(12) << PARA_Ke[i];
+        }
+    }
+
+
+
+    if(output == true) 
+        std::cout << "midinc_rank: " << midinc_rank << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Function: Build_PARA_K builds a stiffness matrix of the correct size for each process and be passed to pdgbsv*/
+void Build_PARA_K(double* PARA_K, const int PARA_nodes, const int Nx, const double A, const double E, const double I, const double l){    
+    double Ke[36] = {0};
+    pp_Ke(Ke, A, E, I, l);
+    const int k = 8;                                // rows of 0s above
+    const int n = 3 ;
+    double* PARA_Ke_W0s = new double[(PARA_nodes+4)*n*(9+k)];       // with the banded 0s
+    Global_Stiffness_Matrix(PARA_Ke_W0s, Ke, PARA_nodes+4, k);
+    Matrix_Transformer_Imp(PARA_Ke_W0s, PARA_nodes+4, k);
+
+    int counter = 0;
+    int i = 102;
+    while(counter < PARA_nodes*n*(9+k)){
+        PARA_K[counter] = PARA_Ke_W0s[i];
+        counter++;
+        i++;
+    }
+
+    delete[] PARA_Ke_W0s;
+
+    return;
+}
+
+
+
+
+
+if(size != 1){
+        double* Parcel = new double[nb/3];
+        for(int i = 1; i < size-1; i++){
+            if(rank == i){
+                int counter = 0;
+                for(int i = 1; i < nb; i+=3){
+                    Parcel[counter] = DIS[i];
+                    counter++;
+                }
+                MPI_Send(Parcel, nb/3, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
+            }
+        }
+
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        
+        if(rank == 0){                                                  // Rank 0 must receive and store the solution from each of the others 
+            int added = 0;
+            double* Solution = new double[nb*size/3];                           // Final Solution
+            for(int i = 1; i < nb; i+=3){
+                Solution[added] = DIS[i];
+                added++;
+            }
+
+            double* Postbox = new double[nb/3];                         //                           
+            for(int i = 1; i < size-1; i++){                                                    // receive the solution from each other array and add it to the stored solution
+                MPI_Recv(Postbox, nb/3, MPI_DOUBLE, i, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                int counter = 0;
+                for(int i = 1; i < nb; i+= 3){
+                    Solution[added] = Postbox[counter]; 
+                    added++;
+                    counter++;
+                }
+            }
+            delete[] Solution;
+            delete[] Parcel;
+            delete[] Postbox;
+
+            /*std::cout << "\nSolution" << std::endl;
+            for(int i = 0; i < nb*size/3; i++)
+                std::cout << Solution[i] << std::endl;*/
+        }
+    }
+
+
+
+
+
+
+
+
+

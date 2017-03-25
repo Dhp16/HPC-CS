@@ -49,9 +49,47 @@ extern "C" {
 }  
 
 // ------------------------- Tools ----------------------------------
+void Inverse_Diagonal_Matrix(double* M, const int Nx){
+    // M any diagonal matrix
+    // inverse of a diagonal matrix is obtained by replacing each element by its inverse
+    int n = 3;
+    for(int i = 0; i < Nx*n; i++){
+        M[i] = 1./M[i];
+    }
+    return;
+}
+void Diagonal_by_vector_Imp(double* diagonal, const double* vector, const int Nx){
+    const int n = 3;
+    for(unsigned int i = 0; i < Nx*n; i++){
+        diagonal[i] = diagonal[i]*vector[i];
+    }
+    return;
+}
+void Matrix_by_Scalar(double* M, const double u, const int Nx){
+    const int n = 3;
+    for(int i = 0; i < Nx*n; i++){
+        M[i] = M[i]*u;
+    }
+    return;
+}
+void Matrix_Add_Diagonal(double* AA, const double* M, const int Nx, const int k = 4){
+    // k: number of upper diagonals
+    int n = 3;
+    int counter = 0;
+    for(int i = k*Nx*n; i < (k+1)*Nx*n; i++){
+        AA[i] = AA[i] + M[counter]; 
+        counter++;
+    }
+    return;
+}
 void Matrix_Copy(double* copy, const double* original, const int size){
     for(int i = 0; i < size; i++)
         copy[i] = original[i];
+}
+void print(double* A, const int size){
+    for(int i = 0; i < size; i++)
+        std::cout << std::setw(12) << A[i] << "   ";
+    std::cout << std::endl;
 }
 void output_array(const double *A, const std::string s, const int cols, const int lines){
     std::cout << "Printing: " << s << std::endl;
@@ -115,6 +153,7 @@ void vector_by_scalar(double* vector, const double scalar, const int size){
     return;
 }
 void adding_three_arrays(double* result, const double* A, const double* B, const double* C, const int size){
+    // /!\ used only for TASK 2
     for(int i = 0; i < size; i++){
         result[i] = A[i] - B[i] + C[i];
     }

@@ -31,7 +31,7 @@ for i in range(length/2, length):
 
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111)
-ax1.plot(Time, Displacement)
+ax1.plot(Time, Displacement, 'b')
 
 ax1.set_ylabel('Displacement [m]')
 ax1.set_xlabel('Time [s]')
