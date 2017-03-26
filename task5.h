@@ -14,15 +14,19 @@
 void T5_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
 	const double T, const double Nt, const double rho){
 	
-	std::cout << "---------------------- Task 5 ------------------------" << std::endl;
+	std::cout << "\n---------------------- Task 5 ------------------------" << std::endl;
 
-	const bool output = false;
+	/*
+		Once the boundaries are taken off there is an uneven number of nodes to distribute evenly across a pair number of processes.
+		In order to maintain an equal block size across processes, the last process is allocated one more node that needed. 
+		This node is populated with 1s in its diagonal and 0s elsewhere so as not to be ill-defined.
+	*/
 
-	const double gamma = 0.5;
-	const double beta = 0.25;
+	const double gamma = 0.5;					// constants
+	const double beta = 0.25;					
 	const int n = 3;
-	const int k = 8;							
-	const double delta_t = T/Nt;
+	const int k = 8;							// number of lines of 0s needed by pdgbsv
+	const double delta_t = T/Nt;				// delta_t
 
 	// Populate 
 	double Fe[6] = {0};
@@ -30,13 +34,20 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	double Ke[36] = {0};
 	pp_Ke(Ke, A, E, I, l);
 
-	int rank;
+	int rank;									
 	int size;
-	MPI_Comm_size(MPI_COMM_WORLD, &size); 						// access the number of processes
+	MPI_Comm_size(MPI_COMM_WORLD, &size); 		// access the number of processes
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    int PARA_Nx = (Nx+1)/size;
-    int midinc_rank = size/2-1;
+    int PARA_Nx;
+    int midinc_rank;					// identify the rank that will include the concentrated load
+
+    if(size > 1){						// set the size of the arrays needed for 
+    	PARA_Nx = (Nx+1)/size;
+		midinc_rank = size/2-1;
+	}
+	else
+		PARA_Nx = Nx-1;
 
     const int PS   = Nx*3;				// Problem size
 	const int nb   = Nx*3/size;			// Block size
@@ -45,8 +56,8 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
     const int lda  = 1 + 2*kl + 2*ku;   // Leading dimension (num of rows)
     const int ldb  = nb;
     const int nrhs = 1;
-    const int ja   = 1;             // Offset index in global array (col)
-    const int ib   = 1;             // Offset index in global array (row)
+    const int ja   = 1;            		// Offset index in global array (col)
+    const int ib   = 1;            		// Offset index in global array (row)
     const int lwork= (nb+ku)*(kl+ku)+6*(kl+ku)*(kl+2*ku) + std::max(nrhs*(nb+2*kl+4*ku), 1);
     int info = 0;
 
@@ -84,13 +95,12 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
     descb[6] = 0;           // Reserved
     
     // -------------------------------------- Equation 13 ----------------------------------------
-	
+	int counter = 0;
     // K matrix for each process ------------
 	double* PARA_Ke_0s = new double[(PARA_Nx+4)*n*(9+k)];
 	Global_Stiffness_Matrix(PARA_Ke_0s, Ke, PARA_Nx+4, k);
 	Matrix_Transformer_Imp(PARA_Ke_0s, PARA_Nx+4, k);
 	double* PARA_Ke = new double[nb*(9+k)];
-	int counter = 0;
 	int i = 102;
 	while(counter < nb*(9+k)){
 		PARA_Ke[counter] = PARA_Ke_0s[i];
@@ -99,13 +109,11 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	}
 	delete[] PARA_Ke_0s;
 
-	// --------------------------------------
-
 	// Adding the Mass factor ---------------
 	double* G_Mm = new double[nb];
 	Global_Mass_Matrix(G_Mm, PARA_Nx, rho, A, l);
-	if(size != 1 && rank == size-1){
-		G_Mm[nb-3] = 0;
+	if(size != 1 && rank == size-1){					
+		G_Mm[nb-3] = 0;								// setting 0s in excess nodes 
 		G_Mm[nb-2] = 0;
 		G_Mm[nb-1] = 0;
 	}
@@ -128,9 +136,8 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 				PARA_Ke[i] = 0.0;
 		}
 	}
-
     // -------------------------------------- Setting up the LOOP --------------------------------
-	double* DIS = new double[nb];
+	double* DIS = new double[nb];									// initialse 
 	double* VEL = new double[nb];
 	double* ACC = new double[nb];
 	initialise_dynamic_array(DIS, nb);
@@ -143,14 +150,15 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 	initialise_dynamic_array(VEL_plus, nb);
 	initialise_dynamic_array(ACC_plus, nb);
 
+	// -------------------------------------- Time loop ----------------------------------
 	for(int i = 0; i < Nt; i++){
 		double t_now = i*delta_t;
- 
+
 		// ---- Force --------------------------------------------------------------------- 
 		double* Fi = new double[nb];
 		initialise_dynamic_array(Fi, nb);
 		if(size > 1){
-			Global_Force_Vector(Fi, Fe, PARA_Nx, 0, 0, (t_now+delta_t)/T);
+			Global_Force_Vector(Fi, Fe, PARA_Nx, 0, 0, (t_now+delta_t)/T);	// do not include the concetrated force when populating the force for each process
 			if(rank == midinc_rank)
 				Fi[nb-2] += Fy*(t_now+delta_t)/T;							// add the concentrated load to the central node 
 			else if(rank == size -1){
@@ -160,35 +168,29 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 			}
 		}
 		else if(size == 1){
-			Global_Force_Vector(Fi, Fe, PARA_Nx, 0, Fy, (t_now+delta_t)/T);
+			Global_Force_Vector(Fi, Fe, PARA_Nx, 0, Fy, (t_now+delta_t)/T);	// Force for the single process is the same as the global force
 		}
 
-		// ----------------------- RHS --> Equation 12 ----------------------------------
+		// ----------------------- RHS of Equation 12 ----------------------------------
 		double* A = new double[nb];
 		for(int i = 0; i < nb; i++)
 			A[i] = (1/(beta*pow(delta_t, 2))) * DIS[i] + (1/(beta*delta_t)) * VEL[i] + (0.5/beta-1)*ACC[i];
 
 		double* B = new double[nb];
 		for(int i = 0; i < nb; i++)
-			B[i] = Fi[i] + A[i]*G_Mm[i];
+			B[i] = Fi[i] + A[i]*G_Mm[i];			// adding the force
 
 		// clear after equation
 		delete[] A;
 
 		// Setting up for solvernb
-		double* PARA_Ke_copy = new double[nb*(9+k)];
+		double* PARA_Ke_copy = new double[nb*(9+k)];						// the solver modifies the 4th entry, hence it is copied before being passed
 		Matrix_Copy(PARA_Ke_copy, PARA_Ke, nb*(9+k));
 		int* ipiv = new int[PS];
-		double* wk   = new double[lwork]; 
+		double* wk = new double[lwork]; 
 
 		// ....................... Using Solver .................
 		F77NAME(pdgbsv) (PS, kl, ku, nrhs, PARA_Ke_copy, ja, desca, ipiv, B, ib, descb, wk, lwork, &info);
-
-		if(rank == 0 && i < 5){
-			std::cout << "\n";
-			for(int i = 0; i < nb; i++)
-				std::cout << std::setw(15) << B[i];
-		}
 
 		// Assign B to solution
 		Matrix_Copy(DIS_plus, B, nb);
@@ -218,38 +220,78 @@ void T5_inputs(const int Nx, const double b, const double h, const double L, con
 		delete[] Fi;
 
 		// clear for Output
-	}
+	} 
 
-
-	// Need to set up the message passing
-	/*
-	if(size != 1){
-		double* Parcel = new double[nb];
-		for(int i=0; i < nb; i++)
-			Parcel[i] = DIS[i];
-		MPI_Send(Parcel, nb, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
-
-		delete[] Parcel;
-	}
 	MPI_Barrier(MPI_COMM_WORLD);
-	if(rank == 0)
-		std::cout << "End of loop" << std::endl;
-
-	*/
-
-
-
-
-
-
+	// Clearing memory
 	delete[] G_Mm;
-	delete[] DIS;
 	delete[] VEL;
 	delete[] ACC;
 	delete[] DIS_plus;
 	delete[] VEL_plus;
 	delete[] ACC_plus;
 	delete[] PARA_Ke;
+
+
+	/*
+		If the task is running on one processor only, the latter is then passed on to the following
+	*/
+
+	if(size == 1)
+		write_task_solution(DIS, nb, "5_size1");
+	else{
+		if(size == 2){																						// Solution sorting specific to 2 processes
+			if(rank == 1){
+				double* Parcel = new double[nb-3];
+				Matrix_Copy(Parcel, DIS, nb-3);
+				MPI_Send(Parcel, nb-3, MPI_DOUBLE, 0, rank, MPI_COMM_WORLD);
+			}
+			if(rank == 0){
+				double* Post_Box = new double[nb-3];
+				MPI_Recv(Post_Box, nb-3, MPI_DOUBLE, 1, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				
+				double* Solution = new double[nb*size-3];
+				for(int i = 0; i < nb; i++)
+					Solution[i] = DIS[i];
+
+				int counter = 0;
+				for(int i = nb; i < nb*size-3; i++){
+					Solution[i] = Post_Box[counter];
+					counter++;
+				}
+				write_task_solution(Solution, nb*2-3, "5_size2");				
+			}				
+		}
+		else if(size > 2){																					// Solution sorting for 4 or mor processes
+			if(rank != 0 ){
+				double* Parcel = new double[nb];
+				Matrix_Copy(Parcel, DIS, nb);
+				MPI_Send(Parcel, nb, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+			}
+			
+			MPI_Barrier(MPI_COMM_WORLD);
+			if(rank == 0){
+				double* Post_Box = new double[nb];
+				double* Solution = new double[nb*size];
+				int j = 0;
+				for(; j < nb; j++)
+					Solution[j] = DIS[j];
+
+				for(int i = 1; i < size; i++){
+					MPI_Recv(Post_Box, nb, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+					for(int i = 0; i < nb; i++){
+						Solution[j] = Post_Box[i];
+						j++;
+					}
+				}
+				write_task_solution(Solution, nb*size-3, "5_size4");				
+			}
+						
+		}
+	}
+
+	// Clearing memory
+	delete[] DIS;
 
     Cblacs_gridexit( ctx );
 

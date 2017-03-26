@@ -250,11 +250,11 @@ void T4_inputs(const int Nx, const double b, const double h, const double L, con
         Solution[i] = Message[counter];
         counter++;
       }
-      write_task_solution(Solution, vec_size, "4");                                   // Write the solution for proof of solution solving with 2 processes and validate for Task 4 (d)
+      write_task_solution(Solution, vec_size, "4_size2");                                   // Write the solution for proof of solution solving with 2 processes and validate for Task 4 (d)
     }
   }
   else{                                                                               // If only one process is running, {u}n can be written directly to the file
-      write_task_solution(U_now, vec_size, "4");                                      // Write the solution for proof of solution solving with 1 process and validate for Task 4 (d)
+      write_task_solution(U_now, vec_size, "4_size1");                                      // Write the solution for proof of solution solving with 1 process and validate for Task 4 (d)
   }
 
   // Clearing all the memory

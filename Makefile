@@ -5,7 +5,7 @@ LDLIBS=-llapack -lblas -lboost_program_options
 T5LDLIBS=-lscalapack-openmpi -lblacs-openmpi -lblacsCinit-openmpi -llapack -lblas -lboost_program_options
 TARGET=compile
 OBJ=main.cpp
- 
+  
 default: $(TARGET)
 all: $(TARGET)
 
@@ -16,16 +16,16 @@ task1: $(TARGET)
 	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 0.1 --Nt 10000 --rho 7850.0 --equation s --scheme n --parallel false
   
 task2: $(TARGET)
-	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme e --parallel false
+	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 500000 --rho 7850.0 --equation d --scheme e --parallel false
 
 task3: $(TARGET)
 	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme i --parallel false
 
 task4: $(TARGET)
-	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme e --parallel true
+	mpiexec -np 2 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 500000 --rho 7850.0 --equation d --scheme e --parallel true
 
 task5: $(TARGET)
-	mpiexec -np 2 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme i --parallel true
+	mpiexec -np 4 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme i --parallel true
 
 # Paramter notes:
 # 	equation: 's' = static   'd' = dynamic

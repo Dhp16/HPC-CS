@@ -1,15 +1,15 @@
 # include <iostream>                
 # include <iomanip>                         
-# include <array>                       
-# include <algorithm>                 
-# include "math.h"                  
+# include <array>                        
+# include <algorithm>                   
+# include "math.h"                   
 # include <string>             
 # include <boost/program_options.hpp>   
-# include <vector>  
+# include <vector>    
 # include <fstream>    
            
 # include <mpi.h>  
-          
+            
 # include "tools.h"      
 # include "task1.h"      
 # include "task2.h"        
@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
         ("T", po::value<double>(), "Total Time")           
         ("Nt", po::value<int>(), "Number of time steps")        
         ("rho", po::value<double>(), "Density") 
-        ("equation", po::value<char>(), "Equation")               
+        ("equation", po::value<char>(), "Equation")                
         ("scheme", po::value<char>(), "Scheme")
         ("parallel", po::value<bool>(), "Run in Parallel"); 
         
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]){
     int     default_Nx = 24;   
     double  default_A = b*h;    
     double  default_I = b*pow(h, 3)/12; 
-    double  default_E = 210000000000;   
+    double  default_E = 210000000000;    
             
     double  default_T = 55.0;   
     int     default_Nt = 200;         
@@ -64,10 +64,10 @@ int main(int argc, char* argv[]){
         
     // read in all as strings and then validate inputs 
      
-    // Inputs for Task 1     
-    double L = vm.count("L")                  ?   vm["L"].as<double>()     : default_L;   
-    int Nx = vm.count("Nx")                   ?   vm["Nx"].as<int>()       : default_Nx; 
-    double A = vm.count("A")                  ?   vm["A"].as<double>()     : default_A; 
+    // Inputs for Task 1      
+    double L = vm.count("L")                  ?   vm["L"].as<double>()     : default_L;    
+    int Nx = vm.count("Nx")                   ?   vm["Nx"].as<int>()       : default_Nx;  
+    double A = vm.count("A")                  ?   vm["A"].as<double>()     : default_A;   
     double I = vm.count("I")                  ?   vm["I"].as<double>()     : default_I;  
     double E = vm.count("E")                  ?   vm["E"].as<double>()     : default_E;             
     // Inputs for Task 2               
@@ -77,13 +77,13 @@ int main(int argc, char* argv[]){
     char equation = vm.count("equation")      ?   vm["equation"].as<char>() : default_equation;
     char scheme = vm.count("scheme")          ?   vm["scheme"].as<char>()   : default_scheme;  
     bool parallel = vm.count("parallel")      ?   vm["parallel"].as<bool>() : default_parallel;
-       
+        
     // ------------------ Task 1 (a): Inputs and Validation ----------
     if(L <= 0){  
         std::cout << "NOTICE: A negative or null length is not appropriate, the default length of " << default_L << ", was selected." << std::endl;
         L = default_L; 
     } 
-    if(Nx <= 0 || Nx % 2 != 0){ 
+    if(Nx <= 0 || Nx % 2 != 0 || Nx < 4){ 
         std::cout << "NOTICE: A negative, null or odd number of elements is not appropriate, the default number of elements, " << default_Nx  << ", was selected." << std::endl;
         Nx = default_Nx;
     }     
@@ -113,10 +113,10 @@ int main(int argc, char* argv[]){
     }    
     std::string Equation;     
     if(equation == 's')    
-        Equation = "static";        
-    else if(equation == 'd')        
-        Equation = "dynamic";      
-    else       
+        Equation = "static";         
+    else if(equation == 'd')          
+        Equation = "dynamic";        
+    else        
         Equation = "neither";        
     std::string Scheme;       
     if(scheme == 'e')   
@@ -134,16 +134,16 @@ int main(int argc, char* argv[]){
         retval = MPI_Init(&argc, &argv);   
         if(retval == MPI_SUCCESS)   
            std::cout << "MPI Successfully Initialised" << std::endl;       // outputting twice, once for each process!
-    }     
-
+    }       
+  
     // ----------------------- Variables needed ---------------------- 
     double l = L/Nx;    
     const double Qx = 0.0;       // no axial force in Task 1;      
     const double Qy = -1000.0;     //  originally in N/mm     
     const double Fy = -1000.0;                   
-                                  
+                                   
     // ---------------------- Further Task 1 -------------------------
-    Nx--;         
+    Nx--;          
         
     std::cout <<"                             Equation: " << Equation << std::endl;
     std::cout <<"                             Scheme:   " << Scheme << std::endl;
@@ -180,4 +180,4 @@ int main(int argc, char* argv[]){
     std::cout << "--------------------------------------------------------------------------------" << std::endl;     
     return 0;    
 } 
-                            
+               

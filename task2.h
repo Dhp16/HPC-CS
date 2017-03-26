@@ -190,7 +190,7 @@ void T2_inputs(const int Nx, const double b, const double h, const double L, con
 	}
 	
 	write_task_solution(U_now, Nx*n, "2");																// Writting Proof of Solution for Task 2 (c) 
-	write_task2_displacements(tsteps, dispMid);															// Writting the data needed for Task 2 (e)
+	//write_task2_displacements(tsteps, dispMid);														// Writting the data needed for Task 2 (e)
 
 	// Clearing memory
 	delete[] U_minus;
