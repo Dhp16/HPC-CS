@@ -13,7 +13,7 @@
 
 void T5_inputs(const int Nx, const double b, const double h, const double L, const double A, const double I, const double E, const double l, const double Qx, const double Qy, const double Fy,
 	const double T, const double Nt, const double rho){
-
+	
 	std::cout << "---------------------- Task 5 ------------------------" << std::endl;
 
 	const bool output = false;

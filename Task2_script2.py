@@ -1,4 +1,4 @@
-# Imperial College London
+# Imperial College London 
 # HPC Assignment Task 3
 # Dominic Pickford 
 # 01272723
@@ -19,21 +19,13 @@ with open("Task2_Oscillations.txt") as file:
 
 length = len(ALL_DATA)
 
-Loading_Time = []
-for i in range(length/2, length):
-	Loading_Time.append(ALL_DATA[i])
-
 Amplitude = []
 for i in range(0, length/2):
 	Amplitude.append(ALL_DATA[i])
 
-#print "Loading Time"
-#for i in Loading_Time:
-#	print i
-
-#print "Amplitude"
-#for i in Amplitude:
-#	print i 
+Loading_Time = []
+for i in range(length/2, length):
+	Loading_Time.append(ALL_DATA[i])
 
 print("ALL DATA length: ", length)
 print("Amplitude length: ", len(Amplitude))
@@ -41,11 +33,13 @@ print("Loading Time length: ", len(Loading_Time))
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
-ax1.plot(Loading_Time, Amplitude)
+ax1.loglog(Loading_Time, Amplitude)
 ax1.set_ylabel('Osciallation Amplitude [m]')
 ax1.set_xlabel('Loading Time [s]')
 ax1.yaxis.grid(color='gray', linestyle='dashed')
 ax1.xaxis.grid(color='gray', linestyle='dashed')
+ax1.set_xlim([0.03,1])
+
 fig1.patch.set_facecolor('white')
 plt.show()
 

@@ -227,7 +227,7 @@ void Global_Stiffness_Matrix(double* G_Ke, const double* Ke, const int Nx, const
 // ----------------------- Task 1 (d) ------------------------------------
 void write_to_file(double* Sol, const int n, const double L, const int Nx){
     std::ofstream myfile;
-    std::string file_name = "/Task1/T1_csol.txt";
+    std::string file_name = "Task1_Solution.txt";
     myfile.open(file_name);
     myfile << 0 << std::endl;
     for(int i = 1; i < n; i+=3){
@@ -266,11 +266,10 @@ void Solve_Eq2(double* G_Fe, double* N, const int Nx, const double L){          
     F77NAME(dgbsv) (J, kl, ku, nrhs, N, lda, ipiv, G_Fe, ldb, &info);                                       
 
     if(info == 0){
-        std::cout << "Computation of the solution successful" << std::endl;
         write_to_file(G_Fe, J, L, Nx);
     }
     else
-        std::cout << "Unable to solve system" << std::endl;
+        std::cout << "NOTICE: dgbsv info: " << info << ". Unable to solve system" << std::endl;
 
     delete[] ipiv;
     return;

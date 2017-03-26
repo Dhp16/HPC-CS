@@ -5,7 +5,7 @@ LDLIBS=-llapack -lblas -lboost_program_options
 T5LDLIBS=-lscalapack-openmpi -lblacs-openmpi -lblacsCinit-openmpi -llapack -lblas -lboost_program_options
 TARGET=compile
 OBJ=main.cpp
-
+ 
 default: $(TARGET)
 all: $(TARGET)
 
@@ -22,7 +22,7 @@ task3: $(TARGET)
 	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme i --parallel false
 
 task4: $(TARGET)
-	mpiexec -np 2 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000000 --rho 7850.0 --equation d --scheme e --parallel true
+	mpiexec -np 1 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme e --parallel true
 
 task5: $(TARGET)
 	mpiexec -np 2 ./$(TARGET) --L 10.0 --Nx 24 --A 0.012 --I 0.0000144 --E 210000000000.0 --T 1.0 --Nt 10000 --rho 7850.0 --equation d --scheme i --parallel true

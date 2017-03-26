@@ -174,3 +174,13 @@ void Diagonal_by_Vector(double* result, const double* diagonal, const double* ve
     }
     return;
 }
+void write_task_solution(const double* Sol, const int size, const std::string task){
+    std::ofstream file;
+    std::string file_name = "Task" + task + "_Solution.txt"; 
+    file.open(file_name);
+    for(int i = 1; i < size; i+=3)
+        file << Sol[i] << std::endl; 
+    file.close();
+    std::cout << "Vertical displacement of the beam written to: " << file_name << std::endl;
+    return;
+}
