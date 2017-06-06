@@ -1,11 +1,9 @@
 # include <iostream>                
 # include <iomanip>                         
 # include <array>                        
-# include <algorithm>                   
-# include "math.h"                   
+# include <algorithm>                                    
 # include <string>             
 # include <boost/program_options.hpp>   
-# include <vector>    
 # include <fstream>    
            
 # include <mpi.h>  
